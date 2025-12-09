@@ -1,4 +1,10 @@
 <?php
+// functions.php - helper utilities
+
+
+use Dompdf\Dompdf;
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPM
 // functions.php - DB-aware helpers (requires db.php)
 require_once __DIR__ . '/db.php';
 use Dompdf\Dompdf;
