@@ -1,0 +1,21 @@
+<?php
+// migrate_json_to_pg.php
+require_once __DIR__ . '/functions.php'; // functions.php must include get_db() by requiring db.php
+$dir = __DIR__ . '/submissions';
+foreach (glob($dir.'/*.json') as $f) {
+    echo "Importing $f ...\n";
+    $j = json_decode(file_get_contents($f), true);
+    if (!$j) { echo " - skip (invalid JSON)\n"; continue; }
+    $id = $j['id'] ?? basename($f, '.json');
+    $record = [
+        'id' => $id,
+        'data' => $j['data'] ?? [],
+        'files' => $j['files'] ?? [],
+        'submitted_documents' => $j['submitted_documents'] ?? new stdClass(),
+        'created_at' => $j['created_at'] ?? date('Y-m-d H:i:s'),
+        'email_sent' => !empty($j['email_sent']) ? 1 : 0
+    ];
+    save_submission_db($record);
+    echo " - imported $id\n";
+}
+echo "Done.\n";
