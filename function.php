@@ -1,12 +1,13 @@
 <?php
-// functions.php - helper utilities
-
+// functions.php - DB-aware helpers (requires db.php)
+require_once __DIR__ . '/db.php';
 use Dompdf\Dompdf;
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
+/* ---------- Year & Serial helpers ---------- */
+
 function fetch_external_year() {
-    // Use worldtimeapi as an external reliable source for current year (Asia/Kolkata)
     $url = 'http://worldtimeapi.org/api/timezone/Asia/Kolkata';
     $ctx = stream_context_create(['http'=>['timeout'=>4]]);
     $res = @file_get_contents($url, false, $ctx);
@@ -16,18 +17,35 @@ function fetch_external_year() {
     return intval(date('Y'));
 }
 
-function next_serial_for_year($yy) {
-    $dir = __DIR__ . '/data';
-    if (!is_dir($dir)) mkdir($dir, 0755, true);
-    $file = "$dir/serial_$yy.txt";
-    if (!file_exists($file)) file_put_contents($file, "0");
-    $n = intval(file_get_contents($file)) + 1;
-    file_put_contents($file, (string)$n);
-    return str_pad($n, 3, '0', STR_PAD_LEFT);
+function next_serial_for_year_db($year) {
+    // Use DB transaction + row lock to increment atomically
+    $pdo = get_db();
+    $pdo->beginTransaction();
+    try {
+        $stmt = $pdo->prepare("SELECT last_serial FROM serial_counters WHERE year = ? FOR UPDATE");
+        $stmt->execute([$year]);
+        $row = $stmt->fetch();
+        if ($row) {
+            $n = intval($row['last_serial']) + 1;
+            $stmt2 = $pdo->prepare("UPDATE serial_counters SET last_serial = ? WHERE year = ?");
+            $stmt2->execute([$n, $year]);
+        } else {
+            $n = 1;
+            $stmt2 = $pdo->prepare("INSERT INTO serial_counters (year, last_serial) VALUES (?, ?)");
+            $stmt2->execute([$year, $n]);
+        }
+        $pdo->commit();
+        return str_pad($n, 3, '0', STR_PAD_LEFT);
+    } catch (Exception $e) {
+        $pdo->rollBack();
+        throw $e;
+    }
 }
 
+/* ---------- File / upload helpers (unchanged) ---------- */
+
 function validate_and_move($fileArray, $destDir, $allowedExt = [], $maxBytes = 1048576) {
-    if ($fileArray['error'] !== UPLOAD_ERR_OK) throw new Exception('Upload error: ' . $fileArray['name']);
+    if ($fileArray['error'] !== UPLOAD_ERR_OK) throw new Exception('Upload error: ' . ($fileArray['name'] ?? ''));
     $ext = strtolower(pathinfo($fileArray['name'], PATHINFO_EXTENSION));
     if (!in_array($ext, $allowedExt)) throw new Exception('Invalid file type for ' . $fileArray['name']);
     if ($fileArray['size'] > $maxBytes) throw new Exception('File too large: ' . $fileArray['name']);
@@ -37,6 +55,8 @@ function validate_and_move($fileArray, $destDir, $allowedExt = [], $maxBytes = 1
     return $target;
 }
 
+/* ---------- PDF ---------- */
+
 function create_pdf_from_html($html, $outPath) {
     $dompdf = new Dompdf();
     $dompdf->set_paper('A4', 'portrait');
@@ -45,8 +65,10 @@ function create_pdf_from_html($html, $outPath) {
     file_put_contents($outPath, $dompdf->output());
 }
 
+/* ---------- HTML builder ---------- */
+
 function build_application_html($record) {
-    // keep layout simple and printable
+    // Same HTML builder as before (keeps using $record['files'] local paths or S3 URLs)
     $d = $record['data'];
     $id = $record['id'];
     $student_name = htmlspecialchars($d['student_name'] ?? '');
@@ -60,9 +82,14 @@ function build_application_html($record) {
     $year = substr((string)fetch_external_year(), -2);
 
     $photo_html = '';
-    if (!empty($record['files']['photo']) && file_exists($record['files']['photo'])) {
-        $bin = base64_encode(file_get_contents($record['files']['photo']));
-        $photo_html = "<img src='data:image/jpeg;base64,$bin' style='width:110px;height:130px;object-fit:cover;border:1px solid #333'/>";
+    if (!empty($record['files']['photo']) && (stripos($record['files']['photo'], 'http') === 0 || file_exists($record['files']['photo']))) {
+        if (file_exists($record['files']['photo'])) {
+            $bin = base64_encode(file_get_contents($record['files']['photo']));
+            $photo_html = "<img src='data:image/jpeg;base64,$bin' style='width:110px;height:130px;object-fit:cover;border:1px solid #333'/>";
+        } else {
+            // external URL (S3) - embed as url
+            $photo_html = "<img src='{$record['files']['photo']}' style='width:110px;height:130px;object-fit:cover;border:1px solid #333'/>";
+        }
     }
 
     $admyear = '20' . $year . '-' . (intval('20'.$year) + 1);
@@ -112,46 +139,85 @@ function build_application_html($record) {
       </div>
       <div style='clear:both'></div>
     </body></html>";
-
     return $html;
 }
 
-function send_email_with_attachment($toEmail, $studentName, $generated_id, $pdfPath, $mobile) {
-    $smtpHost = getenv('SMTP_HOST');
-    $smtpUser = getenv('SMTP_USER');
-    $smtpPass = getenv('SMTP_PASS');
-    $smtpPort = getenv('SMTP_PORT') ?: 587;
-    $fromEmail = getenv('FROM_EMAIL') ?: 'noreply@yourdomain.com';
-    $fromName = getenv('FROM_NAME') ?: 'VVIT Admissions';
+/* ---------- DB persistence ---------- */
 
-    if (!$toEmail || !filter_var($toEmail, FILTER_VALIDATE_EMAIL)) return false;
-    if (!file_exists($pdfPath)) return false;
+function save_submission_db($record) {
+    // $record = ['id'=>..., 'data'=>array, 'files'=>array, 'created_at'=>...]
+    $pdo = get_db();
+    $sql = "INSERT INTO submissions (id, student_name, email, mobile, data, files, submitted_documents, created_at, email_sent)
+            VALUES (:id, :student_name, :email, :mobile, :data, :files, :submitted_documents, :created_at, :email_sent)";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([
+        ':id' => $record['id'],
+        ':student_name' => $record['data']['student_name'] ?? null,
+        ':email' => $record['data']['email'] ?? null,
+        ':mobile' => $record['data']['mobile'] ?? null,
+        ':data' => json_encode($record['data'], JSON_UNESCAPED_UNICODE),
+        ':files' => json_encode($record['files'], JSON_UNESCAPED_UNICODE),
+        ':submitted_documents' => json_encode($record['submitted_documents'] ?? new stdClass(), JSON_UNESCAPED_UNICODE),
+        ':created_at' => $record['created_at'] ?? date('Y-m-d H:i:s'),
+        ':email_sent' => $record['email_sent'] ? 1 : 0
+    ]);
+    return true;
+}
 
-    $mail = new PHPMailer(true);
-    try {
-        $mail->isSMTP();
-        $mail->Host = $smtpHost;
-        $mail->SMTPAuth = true;
-        $mail->Username = $smtpUser;
-        $mail->Password = $smtpPass;
-        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-        $mail->Port = $smtpPort;
+function update_submission_files_db($id, $filesArray) {
+    $pdo = get_db();
+    $stmt = $pdo->prepare("UPDATE submissions SET files = :files WHERE id = :id");
+    $stmt->execute([':files'=>json_encode($filesArray, JSON_UNESCAPED_UNICODE), ':id'=>$id]);
+}
 
-        $mail->setFrom($fromEmail, $fromName);
-        $mail->addAddress($toEmail);
-        $mail->addAttachment($pdfPath, $generated_id . '_application.pdf');
+function mark_email_sent_db($id) {
+    $pdo = get_db();
+    $stmt = $pdo->prepare("UPDATE submissions SET email_sent = 1 WHERE id = :id");
+    $stmt->execute([':id'=>$id]);
+}
 
-        $wa_link = "https://wa.me/91" . preg_replace('/[^0-9]/','',$mobile) . "?text=" . urlencode("Your application ID: $generated_id");
+function fetch_submission_db($id) {
+    $pdo = get_db();
+    $stmt = $pdo->prepare("SELECT * FROM submissions WHERE id = :id");
+    $stmt->execute([':id'=>$id]);
+    $row = $stmt->fetch();
+    if (!$row) return null;
+    // parse JSON fields
+    $row['data'] = json_decode($row['data'], true);
+    $row['files'] = json_decode($row['files'], true);
+    $row['submitted_documents'] = json_decode($row['submitted_documents'], true);
+    return $row;
+}
 
-        $mail->isHTML(true);
-        $mail->Subject = "VVIT Application — ID $generated_id";
-        $mail->Body = "<p>Dear $studentName,</p><p>Your Application ID: <strong>$generated_id</strong></p><p>PDF attached.</p><p><a href='$wa_link'>Send ID to WhatsApp</a></p><p>Regards,<br/>Admissions Team</p>";
-        $mail->AltBody = "Your Application ID: $generated_id\nPlease find attached PDF.";
-
-        $mail->send();
-        return true;
-    } catch (Exception $e) {
-        error_log('Mail error: ' . $mail->ErrorInfo);
-        return false;
+function list_submissions_db($limit=50, $offset=0, $search='') {
+    $pdo = get_db();
+    if ($search !== '') {
+        $sql = "SELECT id, student_name, email, mobile, created_at FROM submissions
+                WHERE id LIKE :s OR student_name LIKE :s
+                ORDER BY created_at DESC LIMIT :lim OFFSET :off";
+        $stmt = $pdo->prepare($sql);
+        $stmt->bindValue(':s', "%{$search}%");
+        $stmt->bindValue(':lim', (int)$limit, PDO::PARAM_INT);
+        $stmt->bindValue(':off', (int)$offset, PDO::PARAM_INT);
+        $stmt->execute();
+    } else {
+        $sql = "SELECT id, student_name, email, mobile, created_at FROM submissions
+                ORDER BY created_at DESC LIMIT :lim OFFSET :off";
+        $stmt = $pdo->prepare($sql);
+        $stmt->bindValue(':lim', (int)$limit, PDO::PARAM_INT);
+        $stmt->bindValue(':off', (int)$offset, PDO::PARAM_INT);
+        $stmt->execute();
     }
+    return $stmt->fetchAll();
+}
+
+function count_submissions_db($search='') {
+    $pdo = get_db();
+    if ($search !== '') {
+        $stmt = $pdo->prepare("SELECT COUNT(*) as c FROM submissions WHERE id LIKE :s OR student_name LIKE :s");
+        $stmt->execute([':s'=>"%{$search}%"]);
+    } else {
+        $stmt = $pdo->query("SELECT COUNT(*) as c FROM submissions");
+    }
+    return intval($stmt->fetchColumn());
 }
