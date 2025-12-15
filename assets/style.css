@@ -1,4 +1,253 @@
-.radio-group label {
-  margin-right: 15px;
-  font-size: 14px;
+/* ===============================
+   GLOBAL VARIABLES
+================================ */
+:root{
+  --bg:#f4f6fb;
+  --card:#ffffff;
+  --primary:#0b5ed7;
+  --primary-dark:#084298;
+  --muted:#6c757d;
+  --border:#d1d5db;
+  --success:#e6ffed;
+  --danger:#ffdddd;
+  --radius:10px;
+}
+
+/* ===============================
+   BASE RESET
+================================ */
+*{
+  box-sizing:border-box;
+  margin:0;
+  padding:0;
+}
+
+body{
+  font-family: "Segoe UI", Roboto, Arial, sans-serif;
+  background:var(--bg);
+  color:#111;
+  padding:12px;
+}
+
+/* ===============================
+   CONTAINER & HEADER
+================================ */
+.container{
+  max-width:900px;
+  margin:10px auto;
+  background:var(--card);
+  padding:20px;
+  border-radius:var(--radius);
+  box-shadow:0 10px 30px rgba(0,0,0,0.08);
+}
+
+.topbar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:12px;
+}
+
+.topbar h2{
+  font-size:20px;
+  font-weight:600;
+}
+
+.college-btn{
+  background:var(--primary);
+  color:#fff;
+  padding:8px 14px;
+  border-radius:8px;
+  text-decoration:none;
+  font-size:14px;
+}
+
+/* ===============================
+   FLASH MESSAGES
+================================ */
+.flash{
+  padding:10px;
+  margin:10px 0;
+  border-radius:8px;
+  font-size:14px;
+}
+
+.flash.success{background:var(--success);color:#0f5132;}
+.flash.error{background:var(--danger);color:#842029;}
+.flash.info{background:#eef2ff;color:#1e40af;}
+
+/* ===============================
+   FORM LAYOUT
+================================ */
+form{
+  width:100%;
+}
+
+.step{
+  display:none;
+}
+
+.step.active{
+  display:block;
+}
+
+.row{
+  display:flex;
+  gap:12px;
+  margin-bottom:12px;
+  align-items:flex-start;
+}
+
+.col{
+  flex:1;
+}
+
+.col.narrow{
+  max-width:200px;
+}
+
+label{
+  display:block;
+  font-size:13px;
+  margin-bottom:6px;
+  color:#333;
+}
+
+/* ===============================
+   INPUTS
+================================ */
+input[type=text],
+input[type=email],
+input[type=date],
+select,
+textarea,
+input[type=file]{
+  width:100%;
+  padding:10px;
+  border-radius:8px;
+  border:1px solid var(--border);
+  font-size:14px;
+  outline:none;
+}
+
+input:focus,
+select:focus,
+textarea:focus{
+  border-color:var(--primary);
+}
+
+textarea{
+  resize:vertical;
+  min-height:60px;
+}
+
+/* ===============================
+   RADIO GROUP (GENDER)
+================================ */
+.radio-group{
+  display:flex;
+  gap:20px;
+  padding-top:6px;
+}
+
+.radio-group label{
+  font-size:14px;
+  cursor:pointer;
+}
+
+/* ===============================
+   SECTION HEADINGS
+================================ */
+.subhead,
+h4{
+  font-size:15px;
+  margin:8px 0 6px;
+  color:var(--muted);
+}
+
+/* ===============================
+   ACTION BUTTONS
+================================ */
+.actions{
+  display:flex;
+  justify-content:flex-end;
+  gap:10px;
+  margin-top:16px;
+}
+
+button{
+  padding:10px 18px;
+  border:none;
+  border-radius:8px;
+  font-size:14px;
+  font-weight:600;
+  cursor:pointer;
+}
+
+button:hover{
+  opacity:0.95;
+}
+
+button.btn-primary{
+  background:var(--primary);
+  color:#fff;
+}
+
+button.btn-primary:hover{
+  background:var(--primary-dark);
+}
+
+button.btn-grey{
+  background:#6c757d;
+  color:#fff;
+}
+
+/* ===============================
+   TEXT HELPERS
+================================ */
+.muted{
+  font-size:13px;
+  color:var(--muted);
+}
+
+/* ===============================
+   RESPONSIVE DESIGN
+================================ */
+@media (max-width: 768px){
+  .row{
+    flex-direction:column;
+  }
+
+  .col.narrow{
+    max-width:100%;
+  }
+
+  .container{
+    padding:16px;
+  }
+}
+
+@media (max-width: 430px){
+  body{
+    padding:8px;
+  }
+
+  .container{
+    padding:14px;
+    border-radius:8px;
+  }
+
+  .topbar h2{
+    font-size:18px;
+  }
+
+  label{
+    font-size:13px;
+  }
+
+  input,
+  select,
+  textarea{
+    font-size:14px;
+  }
 }
