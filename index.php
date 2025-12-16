@@ -170,6 +170,7 @@ session_start();
 
       <div class="actions">
         <button type="button" class="btn-primary" onclick="nextStep()">Next</button>
+        <button type="button" onclick="alert('JS WORKING')">Test JS</button>
       </div>
 
     </div>
