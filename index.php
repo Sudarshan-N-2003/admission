@@ -119,6 +119,18 @@ session_start();
         </div>
       </div>
 
+<div class="row">
+  <div class="col">
+    <label>Permanent Address</label>
+    <textarea name="permanent_address"
+              required
+              rows="3"
+              oninput="toUpper(this)"
+              placeholder="Enter permanent address"></textarea>
+  </div>
+</div>
+
+      
       <div class="row">
         <div class="col">
           <label>Admission Through</label>
