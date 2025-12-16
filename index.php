@@ -82,6 +82,29 @@ session_start();
           <label>Email</label>
           <input type="email" name="email" required>
         </div>
+
+        <div class="row">
+  <div class="col">
+    <label>Previous College Name</label>
+    <input type="text"
+           name="prev_college"
+           required
+           oninput="toUpper(this)"
+           placeholder="Enter previous college name">
+  </div>
+</div>
+        
+        <div class="row">
+  <div class="col">
+    <label>Previous Year Combination</label>
+    <select name="prev_combination" required>
+      <option value="">-- Select --</option>
+      <option>PCMB</option>
+      <option>PCMC</option>
+      <option>DIPLOMA (LATERAL ENTRY)</option>
+    </select>
+  </div>
+</div>
         <div class="col">
           <label>State</label>
           <select name="state" required>
