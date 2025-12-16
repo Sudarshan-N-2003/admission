@@ -66,6 +66,32 @@ session_start();
         </div>
       </div>
 
+<div class="row">
+  <div class="col">
+    <label>Category</label>
+    <select name="category" id="category" required>
+      <option value="">-- Select Category --</option>
+      <option>CAT 1</option>
+      <option>2A</option>
+      <option>2B</option>
+      <option>3A</option>
+      <option>3B</option>
+      <option>SC</option>
+      <option>ST</option>
+      <option>NOT APPLICABLE</option>
+    </select>
+  </div>
+
+  <div class="col">
+    <label>Sub Caste</label>
+    <input type="text"
+           name="sub_caste"
+           oninput="toUpper(this)"
+           placeholder="Eg: Lingayat, Reddy">
+  </div>
+</div>
+
+      
       <div class="row">
         <div class="col">
           <label>Mobile Number</label>
