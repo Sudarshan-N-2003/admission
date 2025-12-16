@@ -32,18 +32,18 @@ function fetch_external_year(): int {
  * Generate next serial number per year
  */
 function next_serial_for_year(int $year): string {
-    $dir = __DIR__ . '/data';
+    $dir = sys_get_temp_dir() . '/admission_data';
 
     if (!is_dir($dir)) {
-        mkdir($dir, 0755, true);
+        mkdir($dir, 0777, true);
     }
 
     $file = $dir . "/serial_$year.txt";
     $last = file_exists($file) ? (int) file_get_contents($file) : 0;
     $next = $last + 1;
 
-    file_put_contents($file, (string) $next);
-    return str_pad((string) $next, 3, '0', STR_PAD_LEFT);
+    file_put_contents($file, (string)$next);
+    return str_pad((string)$next, 3, '0', STR_PAD_LEFT);
 }
 
 /**
