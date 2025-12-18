@@ -104,6 +104,18 @@ session_start();
       </div>
 
       <div class="row">
+  <div class="col">
+    <label>Guardian Mobile Number</label>
+    <input type="text"
+           name="guardian_mobile"
+           pattern="\d{10}"
+           required
+           placeholder="10 digit mobile number">
+  </div>
+</div>
+
+
+      <div class="row">
         <div class="col">
           <label>Email</label>
           <input type="email" name="email" required>
@@ -247,34 +259,51 @@ session_start();
           <label>Passport Size Photo</label>
           <input type="file" name="photo" accept="image/jpeg" required>
         </div>
-        <div class="col">
-          <label>Previous Year Marks Card (PDF)</label>
-          <input type="file" name="marks" accept="application/pdf" required>
-        </div>
-      </div>
 
-      <div class="row">
-        <div class="col">
-          <label>Aadhaar Front</label>
-          <input type="file" name="aadhaar_front">
-        </div>
-        <div class="col">
-          <label>Aadhaar Back</label>
-          <input type="file" name="aadhaar_back">
-        </div>
-      </div>
+  <div class="row">
+    <div class="col">
+      <label>10 + 12 / Equivalent Marks Card (PDF)</label>
+      <input type="file" name="marks_12" accept="application/pdf" required>
+    </div>
+  </div>
 
-      <div class="row">
-        <div class="col">
-          <label>Caste & Income Certificate (PDF)</label>
-          <input type="file" name="caste_income">
-        </div>
-      </div>
+  <div class="row">
+    <div class="col">
+      <label>Transfer Certificate (TC) (PDF)</label>
+      <input type="file" name="transfer_certificate" accept="application/pdf" required>
+    </div>
+    <div class="col">
+      <label>Study Certificate (PDF)</label>
+      <input type="file" name="study_certificate" accept="application/pdf" required>
+    </div>
+  </div>
 
-      <div class="actions">
-        <button type="button" class="btn-grey" onclick="prevStep()">Back</button>
-        <button type="submit" class="btn-primary">Submit</button>
+  <!-- KEA DOCUMENT -->
+  <div id="kea_doc" style="display:none">
+    <div class="row">
+      <div class="col">
+        <label>KEA Payment Acknowledgement (PDF)</label>
+        <input type="file" name="kea_acknowledgement" accept="application/pdf">
       </div>
+    </div>
+  </div>
+
+  <!-- MANAGEMENT DOCUMENT -->
+  <div id="management_doc" style="display:none">
+    <div class="row">
+      <div class="col">
+        <label>College Fees Payment Receipt (PDF)</label>
+        <input type="file" name="management_receipt" accept="application/pdf">
+      </div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button type="button" class="btn-grey" onclick="prevStep()">Back</button>
+    <button type="submit" class="btn-primary">Submit</button>
+  </div>
+
+</div>
 
     </div>
 
