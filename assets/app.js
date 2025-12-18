@@ -16,7 +16,7 @@ function prevStep() {
 function onAdmissionChange() {
   const type = document.getElementById("admission_through").value;
 
-  // Form sections
+  // Admission detail sections
   document.getElementById("kea_section").style.display =
     type === "KEA" ? "block" : "none";
 
@@ -29,7 +29,19 @@ function onAdmissionChange() {
 
   document.getElementById("management_doc").style.display =
     type === "MANAGEMENT" ? "block" : "none";
+
+  // Make required dynamically
+  if (type === "KEA") {
+    document.querySelector("input[name='kea_acknowledgement']").required = true;
+    document.querySelector("input[name='management_receipt']").required = false;
+  }
+
+  if (type === "MANAGEMENT") {
+    document.querySelector("input[name='management_receipt']").required = true;
+    document.querySelector("input[name='kea_acknowledgement']").required = false;
+  }
 }
+
 
 
 // ===== AUTO UPPERCASE =====
