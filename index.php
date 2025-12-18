@@ -292,24 +292,21 @@ session_start();
 
 
   <!-- KEA DOCUMENT -->
-  <div id="kea_doc" style="display:none">
-    <div class="row">
-      <div class="col">
-        <label>KEA Payment Acknowledgement (PDF)</label>
-        <input type="file" name="kea_acknowledgement" accept="application/pdf">
-      </div>
-    </div>
-  </div>
+<div id="kea_doc" class="conditional-doc" style="display:none">
+  <label>KEA Payment Acknowledgement (PDF)</label>
+  <input type="file"
+         name="kea_acknowledgement"
+         accept="application/pdf">
+</div>
+
 
   <!-- MANAGEMENT DOCUMENT -->
-  <div id="management_doc" style="display:none">
-    <div class="row">
-      <div class="col">
-        <label>College Fees Payment Receipt (PDF)</label>
-        <input type="file" name="management_receipt" accept="application/pdf">
-      </div>
-    </div>
-  </div>
+<div id="management_doc" class="conditional-doc" style="display:none">
+  <label>College Fees Payment Receipt (PDF)</label>
+  <input type="file"
+         name="management_receipt"
+         accept="application/pdf">
+</div>
 
   <div class="actions">
     <button type="button" class="btn-grey" onclick="prevStep()">Back</button>
