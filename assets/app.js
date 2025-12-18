@@ -1,8 +1,4 @@
-function toUpper(el) {
-  el.value = el.value.toUpperCase();
-}
-
-function toggleAdmission() {
+function showAdmissionFields() {
   const type = document.getElementById("admission_through").value;
 
   document.getElementById("kea_section").classList.add("hidden");
@@ -24,7 +20,7 @@ function toggleAdmission() {
 function nextStep() {
   document.getElementById("step1").classList.remove("active");
   document.getElementById("step2").classList.add("active");
-  toggleAdmission();
+  showAdmissionFields();
 }
 
 function prevStep() {
@@ -33,5 +29,7 @@ function prevStep() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  document.getElementById("admission_through").addEventListener("change", toggleAdmission);
+  document
+    .getElementById("admission_through")
+    .addEventListener("change", showAdmissionFields);
 });
