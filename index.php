@@ -172,11 +172,13 @@ session_start();
       <div class="row">
         <div class="col">
           <label>Admission Through</label>
-          <select name="admission_through" id="admission_through" required onchange="onAdmissionChange()">
-            <option value="">-- Select --</option>
-            <option value="KEA">KEA</option>
-            <option value="MANAGEMENT">MANAGEMENT</option>
-          </select>
+          <select name="admission_through"
+        id="admission_through"
+        required>
+  <option value="">-- SELECT --</option>
+  <option value="KEA">KEA</option>
+  <option value="MANAGEMENT">MANAGEMENT</option>
+</select>
         </div>
       </div>
 
