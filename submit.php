@@ -5,16 +5,19 @@ require_once __DIR__ . '/functions.php';
 
 try {
 
-    // -----------------------------
-    // 1. REQUIRED FIELD VALIDATION
-    // -----------------------------
+    /* ---------------------------------
+       1. REQUIRED FIELD VALIDATION
+    ----------------------------------*/
     $required = [
         'student_name',
         'dob',
+        'gender',
         'father_name',
         'mother_name',
         'mobile',
+        'guardian_mobile',
         'email',
+        'state',
         'prev_combination',
         'prev_college',
         'permanent_address',
@@ -28,22 +31,44 @@ try {
         }
     }
 
-    // Normalize input
+    /* ---------------------------------
+       2. NORMALIZE INPUT (UPPERCASE)
+    ----------------------------------*/
     $data = [];
-    foreach ($_POST as $k => $v) {
-        $data[$k] = is_string($v) ? strtoupper(trim($v)) : $v;
+    foreach ($_POST as $key => $value) {
+        $data[$key] = is_string($value) ? strtoupper(trim($value)) : $value;
     }
 
-    // -----------------------------
-    // 2. GENERATE APPLICATION ID
-    // -----------------------------
-    $year = fetch_external_year();
-    $serial = next_serial_for_year($year);
+    /* ---------------------------------
+       3. ADMISSION TYPE VALIDATION
+    ----------------------------------*/
+    if ($data['admission_through'] === 'KEA') {
+        $keaFields = ['cet_number', 'cet_rank', 'seat_allotted', 'allotted_branch'];
+        foreach ($keaFields as $f) {
+            if (empty($data[$f])) {
+                throw new Exception("Missing KEA detail: $f");
+            }
+        }
+    }
+
+    if ($data['admission_through'] === 'MANAGEMENT') {
+        if (empty($data['allotted_branch_management'])) {
+            throw new Exception("Missing Management branch");
+        }
+        // unify branch key
+        $data['allotted_branch'] = $data['allotted_branch_management'];
+    }
+
+    /* ---------------------------------
+       4. GENERATE APPLICATION ID
+    ----------------------------------*/
+    $year = fetch_external_year();              // e.g. 2025
+    $serial = next_serial_for_year($year);      // 001
     $application_id = '1VJ' . substr($year, -2) . $serial;
 
-    // -----------------------------
-    // 3. RENDER-SAFE DIRECTORIES
-    // -----------------------------
+    /* ---------------------------------
+       5. RENDER-SAFE DIRECTORIES
+    ----------------------------------*/
     $baseTmp = sys_get_temp_dir() . '/admission_app';
 
     $uploadDir = $baseTmp . '/uploads/' . $application_id;
@@ -56,57 +81,67 @@ try {
         mkdir($recordDir, 0777, true);
     }
 
-    // -----------------------------
-    // 4. FILE UPLOADS
-    // -----------------------------
+    /* ---------------------------------
+       6. FILE UPLOADS
+    ----------------------------------*/
     $maxSize = 2 * 1024 * 1024; // 2MB
-
     $files = [];
 
-    $files['photo'] = validate_and_move(
-        $_FILES['photo'],
-        $uploadDir,
-        ['jpg', 'jpeg'],
-        $maxSize
-    );
-
-    $files['marks'] = validate_and_move(
-        $_FILES['marks'],
+    // 10 + 12 / Equivalent Marks Card
+    $files['marks_12'] = validate_and_move(
+        $_FILES['marks_12'],
         $uploadDir,
         ['pdf'],
         $maxSize
     );
 
-    if (!empty($_FILES['aadhaar_front']['name'])) {
-        $files['aadhaar_front'] = validate_and_move(
-            $_FILES['aadhaar_front'],
-            $uploadDir,
-            ['jpg', 'jpeg', 'pdf'],
-            $maxSize
-        );
-    }
+    // Transfer Certificate
+    $files['transfer_certificate'] = validate_and_move(
+        $_FILES['transfer_certificate'],
+        $uploadDir,
+        ['pdf'],
+        $maxSize
+    );
 
-    if (!empty($_FILES['aadhaar_back']['name'])) {
-        $files['aadhaar_back'] = validate_and_move(
-            $_FILES['aadhaar_back'],
-            $uploadDir,
-            ['jpg', 'jpeg', 'pdf'],
-            $maxSize
-        );
-    }
+    // Study Certificate
+    $files['study_certificate'] = validate_and_move(
+        $_FILES['study_certificate'],
+        $uploadDir,
+        ['pdf'],
+        $maxSize
+    );
 
-    if ($data['category'] !== 'NOT APPLICABLE' && !empty($_FILES['caste_income']['name'])) {
-        $files['caste_income'] = validate_and_move(
-            $_FILES['caste_income'],
+    // KEA specific document
+    if ($data['admission_through'] === 'KEA') {
+        if (empty($_FILES['kea_acknowledgement']['name'])) {
+            throw new Exception('KEA payment acknowledgement is required');
+        }
+
+        $files['kea_acknowledgement'] = validate_and_move(
+            $_FILES['kea_acknowledgement'],
             $uploadDir,
             ['pdf'],
             $maxSize
         );
     }
 
-    // -----------------------------
-    // 5. SAVE RECORD (JSON)
-    // -----------------------------
+    // Management specific document
+    if ($data['admission_through'] === 'MANAGEMENT') {
+        if (empty($_FILES['management_receipt']['name'])) {
+            throw new Exception('College fees payment receipt is required');
+        }
+
+        $files['management_receipt'] = validate_and_move(
+            $_FILES['management_receipt'],
+            $uploadDir,
+            ['pdf'],
+            $maxSize
+        );
+    }
+
+    /* ---------------------------------
+       7. SAVE RECORD (JSON – TEMP)
+    ----------------------------------*/
     $record = [
         'application_id' => $application_id,
         'submitted_at'   => date('c'),
@@ -117,24 +152,9 @@ try {
     $jsonPath = $recordDir . '/' . $application_id . '.json';
     file_put_contents($jsonPath, json_encode($record, JSON_PRETTY_PRINT));
 
-    // -----------------------------
-    // 6. (OPTIONAL) PDF GENERATION
-    // -----------------------------
-    // Uncomment when dompdf is ready
-    /*
-    $html = build_application_html([
-        'id'    => $application_id,
-        'data'  => $data,
-        'files' => $files
-    ]);
-
-    $pdfPath = $uploadDir . '/' . $application_id . '.pdf';
-    create_pdf_from_html($html, $pdfPath);
-    */
-
-    // -----------------------------
-    // 7. SUCCESS RESPONSE
-    // -----------------------------
+    /* ---------------------------------
+       8. SUCCESS RESPONSE
+    ----------------------------------*/
     $_SESSION['flash'] = "Application submitted successfully. Your ID: $application_id";
     $_SESSION['flash_type'] = 'success';
 
