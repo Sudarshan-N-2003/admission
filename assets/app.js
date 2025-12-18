@@ -16,20 +16,21 @@ function prevStep() {
 function onAdmissionChange() {
   const type = document.getElementById("admission_through").value;
 
-  const kea = document.getElementById("kea_section");
-  const mgmt = document.getElementById("management_section");
+  // Form sections
+  document.getElementById("kea_section").style.display =
+    type === "KEA" ? "block" : "none";
 
-  if (type === "KEA") {
-    kea.style.display = "block";
-    mgmt.style.display = "none";
-  } else if (type === "MANAGEMENT") {
-    kea.style.display = "none";
-    mgmt.style.display = "block";
-  } else {
-    kea.style.display = "none";
-    mgmt.style.display = "none";
-  }
+  document.getElementById("management_section").style.display =
+    type === "MANAGEMENT" ? "block" : "none";
+
+  // Document sections
+  document.getElementById("kea_doc").style.display =
+    type === "KEA" ? "block" : "none";
+
+  document.getElementById("management_doc").style.display =
+    type === "MANAGEMENT" ? "block" : "none";
 }
+
 
 // ===== AUTO UPPERCASE =====
 function toUpper(el) {
