@@ -1,16 +1,26 @@
 // ===== BASIC STEP CONTROL =====
 
 function nextStep() {
-  console.log("Next clicked");
+  // Validate step 1 required fields first
+  const step1 = document.getElementById("step1");
+  const required = step1.querySelectorAll("input[required], select[required]");
 
-  document.getElementById("step1").classList.remove("active");
+  for (let field of required) {
+    if (!field.checkValidity()) {
+      field.reportValidity();
+      return;
+    }
+  }
+
+  // Move to step 2
+  step1.classList.remove("active");
   document.getElementById("step2").classList.add("active");
+
+  // 🔥 VERY IMPORTANT
+  // Re-check admission type and show correct upload section
+  onAdmissionChange();
 }
 
-function prevStep() {
-  document.getElementById("step2").classList.remove("active");
-  document.getElementById("step1").classList.add("active");
-}
 
 // ===== ADMISSION TYPE CONTROL =====
 function onAdmissionChange() {
