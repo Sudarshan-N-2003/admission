@@ -278,6 +278,17 @@ session_start();
     </div>
   </div>
 
+        <div class="row">
+  <div class="col">
+    <label>Student Signature (JPG / PNG)</label>
+    <input type="file"
+           name="student_signature"
+           accept="image/jpeg,image/png"
+           required>
+  </div>
+</div>
+
+
   <!-- KEA DOCUMENT -->
   <div id="kea_doc" style="display:none">
     <div class="row">
