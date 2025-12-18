@@ -1,19 +1,36 @@
 function showAdmissionFields() {
   const type = document.getElementById("admission_through").value;
 
-  document.getElementById("kea_section").classList.add("hidden");
-  document.getElementById("management_section").classList.add("hidden");
-  document.getElementById("kea_doc").classList.add("hidden");
-  document.getElementById("management_doc").classList.add("hidden");
+  const keaSection = document.getElementById("kea_section");
+  const mgmtSection = document.getElementById("management_section");
 
+  const keaDoc = document.getElementById("kea_doc");
+  const mgmtDoc = document.getElementById("management_doc");
+
+  const keaInput = document.getElementById("kea_acknowledgement");
+  const mgmtInput = document.getElementById("management_receipt");
+
+  // Hide all
+  keaSection.classList.add("hidden");
+  mgmtSection.classList.add("hidden");
+  keaDoc.classList.add("hidden");
+  mgmtDoc.classList.add("hidden");
+
+  // Remove required
+  keaInput.required = false;
+  mgmtInput.required = false;
+
+  // Show + require based on admission type
   if (type === "KEA") {
-    document.getElementById("kea_section").classList.remove("hidden");
-    document.getElementById("kea_doc").classList.remove("hidden");
+    keaSection.classList.remove("hidden");
+    keaDoc.classList.remove("hidden");
+    keaInput.required = true;
   }
 
   if (type === "MANAGEMENT") {
-    document.getElementById("management_section").classList.remove("hidden");
-    document.getElementById("management_doc").classList.remove("hidden");
+    mgmtSection.classList.remove("hidden");
+    mgmtDoc.classList.remove("hidden");
+    mgmtInput.required = true;
   }
 }
 
@@ -28,7 +45,7 @@ function prevStep() {
   document.getElementById("step1").classList.add("active");
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", function () {
   document
     .getElementById("admission_through")
     .addEventListener("change", showAdmissionFields);
