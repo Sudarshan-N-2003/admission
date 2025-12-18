@@ -21,7 +21,7 @@
 
 <form method="post" action="submit.php" enctype="multipart/form-data">
 
-<!-- ===== STEP 1 ===== -->
+<!-- ================= STEP 1 ================= -->
 <div class="step active" id="step1">
 
   <label>Student Name</label>
@@ -72,7 +72,7 @@
   <button type="button" onclick="nextStep()">Next</button>
 </div>
 
-<!-- ===== STEP 2 ===== -->
+<!-- ================= STEP 2 ================= -->
 <div class="step" id="step2">
 
   <label>10 + 12 / Equivalent Marks Card (PDF)</label>
@@ -84,14 +84,22 @@
   <label>Student Signature (JPG / PNG)</label>
   <input type="file" name="student_signature" accept="image/*" required>
 
+  <!-- KEA DOC -->
   <div id="kea_doc" class="hidden">
     <label>KEA Payment Acknowledgement (PDF)</label>
-    <input type="file" name="kea_acknowledgement" accept="application/pdf">
+    <input type="file"
+           name="kea_acknowledgement"
+           id="kea_acknowledgement"
+           accept="application/pdf">
   </div>
 
+  <!-- MANAGEMENT DOC -->
   <div id="management_doc" class="hidden">
     <label>College Fees Receipt (PDF)</label>
-    <input type="file" name="management_receipt" accept="application/pdf">
+    <input type="file"
+           name="management_receipt"
+           id="management_receipt"
+           accept="application/pdf">
   </div>
 
   <button type="button" class="secondary" onclick="prevStep()">Back</button>
