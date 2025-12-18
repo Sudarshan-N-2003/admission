@@ -251,3 +251,20 @@ button.btn-grey{
     font-size:14px;
   }
 }
+
+.step { display: none; }
+.step.active { display: block; }
+.hidden { display: none; }
+
+.container {
+  max-width: 420px;
+  margin: auto;
+  font-family: Arial;
+}
+
+label { margin-top: 10px; display: block; }
+input, select, textarea, button {
+  width: 100%;
+  padding: 8px;
+  margin-top: 5px;
+}
