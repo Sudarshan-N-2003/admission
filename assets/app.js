@@ -26,32 +26,19 @@ function nextStep() {
 function onAdmissionChange() {
   const type = document.getElementById("admission_through").value;
 
-  // Admission detail sections
-  document.getElementById("kea_section").style.display =
-    type === "KEA" ? "block" : "none";
+  const keaDoc = document.getElementById("kea_doc");
+  const mgmtDoc = document.getElementById("management_doc");
 
-  document.getElementById("management_section").style.display =
-    type === "MANAGEMENT" ? "block" : "none";
+  if (keaDoc) keaDoc.style.display = type === "KEA" ? "block" : "none";
+  if (mgmtDoc) mgmtDoc.style.display = type === "MANAGEMENT" ? "block" : "none";
 
-  // Document sections
-  document.getElementById("kea_doc").style.display =
-    type === "KEA" ? "block" : "none";
+  // Toggle required attribute
+  const keaInput = document.querySelector("input[name='kea_acknowledgement']");
+  const mgmtInput = document.querySelector("input[name='management_receipt']");
 
-  document.getElementById("management_doc").style.display =
-    type === "MANAGEMENT" ? "block" : "none";
-
-  // Make required dynamically
-  if (type === "KEA") {
-    document.querySelector("input[name='kea_acknowledgement']").required = true;
-    document.querySelector("input[name='management_receipt']").required = false;
-  }
-
-  if (type === "MANAGEMENT") {
-    document.querySelector("input[name='management_receipt']").required = true;
-    document.querySelector("input[name='kea_acknowledgement']").required = false;
-  }
+  if (keaInput) keaInput.required = (type === "KEA");
+  if (mgmtInput) mgmtInput.required = (type === "MANAGEMENT");
 }
-
 
 
 // ===== AUTO UPPERCASE =====
