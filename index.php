@@ -43,6 +43,7 @@
 <label>Mother/Gaurdian Name</label>
   <input type="text" name="mother_name" required oninput="this.value=this.value.toUpperCase()">
 
+<label>Email</label>
 <input type="email" name="email" required placeholder="Email">
 
   <label>Mobile Number</label>
@@ -53,6 +54,15 @@
 
   <label>Previous College Name</label>
   <input type="text" name="prev_college" required oninput="this.value=this.value.toUpperCase()">
+
+
+<label>Previous Combination</label>
+<select name="prev_combination" required>
+  <option value="">Select Combination</option>
+  <option>PCMB</option>
+  <option>PCMC</option>
+  <option>DIPLOMA (LATERAL ENTRY)</option>
+</select>
 
 <label>State</label>
 <select name="state" required>
