@@ -79,3 +79,13 @@ CREATE TABLE admissions (
 
 
 
+
+
+INSERT INTO admin_users (email, password_hash)
+VALUES (
+  'admin@vvit.ac.in',
+  crypt('Vvit@123', gen_salt('bf'))
+);
+
+
+
