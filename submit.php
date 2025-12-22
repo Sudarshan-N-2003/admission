@@ -191,6 +191,46 @@ file_put_contents($pdfPath, $dompdf->output());
 
 
 
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
+$mail = new PHPMailer(true);
+
+try {
+    $mail->isSMTP();
+    $mail->Host       = getenv('SMTP_HOST');
+    $mail->SMTPAuth   = true;
+    $mail->Username   = getenv('SMTP_USER');
+    $mail->Password   = getenv('SMTP_PASS');
+    $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+    $mail->Port       = getenv('SMTP_PORT') ?: 587;
+
+    $mail->setFrom(getenv('FROM_EMAIL'), getenv('FROM_NAME'));
+    $mail->addAddress($data['email'], $data['student_name']);
+
+    $mail->addAttachment($pdfPath, $application_id . '.pdf');
+
+    $mail->isHTML(true);
+    $mail->Subject = "VVIT Admission Application – $application_id";
+
+    $mail->Body = "
+        <p>Dear <b>{$data['student_name']}</b>,</p>
+        <p>Your admission application has been submitted successfully.</p>
+        <p><b>Application ID:</b> $application_id</p>
+        <p>Please find the attached application PDF.</p>
+        <br>
+        <p>Regards,<br>VVIT Admissions</p>
+    ";
+
+    $mail->send();
+
+} catch (Exception $e) {
+    // Email failure should NOT stop submission
+    error_log('Mail Error: ' . $mail->ErrorInfo);
+}
+
+
+
 // store info for success page
 $_SESSION['application_id'] = $application_id;
 $_SESSION['pdf_path'] = $pdfPath;
