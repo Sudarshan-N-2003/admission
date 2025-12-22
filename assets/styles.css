@@ -221,3 +221,17 @@ button.secondary {
   label { font-size: 13px; }
   input, select, textarea { font-size: 14px; }
 }
+
+
+
+.download-btn {
+  display: block;
+  margin-top: 20px;
+  padding: 12px;
+  background: #16a34a;
+  color: #fff;
+  text-align: center;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: bold;
+}
