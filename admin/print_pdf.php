@@ -10,6 +10,7 @@ require_once '../vendor/autoload.php';
 require_once '../r2.php';
 
 use Dompdf\Dompdf;
+use Endroid\QrCode\Builder\Builder;
 
 /* ===============================
    1. GET & VALIDATE APPLICATION ID
@@ -80,6 +81,21 @@ if ($d['admission_through'] === 'KEA') {
     ";
 }
 
+
+
+
+
+$qr = Builder::create()
+    ->data("VVIT Application ID: {$applicationId}")
+    ->size(120)
+    ->margin(5)
+    ->build();
+
+$qrBase64 = base64_encode($qr->getString());
+
+
+
+
 /* ===============================
    6. BUILD PDF HTML (VVIT FORMAT)
 ================================ */
@@ -102,6 +118,7 @@ h2,h3{text-align:center;margin:4px 0}
 .photo{border:1px solid #000;width:90px;height:110px}
 .sign{margin-top:20px;display:flex;justify-content:space-between}
 </style>
+<img src="data:image/png;base64,<?= $qrBase64 ?>" style="width:80px">
 </head>
 
 <body>
