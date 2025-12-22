@@ -43,6 +43,7 @@
 <label>Mother/Gaurdian Name</label>
   <input type="text" name="mother_name" required oninput="this.value=this.value.toUpperCase()">
 
+<input type="email" name="email" required placeholder="Email">
 
   <label>Mobile Number</label>
   <input type="text" name="mobile" pattern="\d{10}" required>
@@ -88,6 +89,9 @@
 
 <!-- ================= STEP 2 ================= -->
 <div class="step" id="step2">
+
+ <label>Passport Size Photo *</label>
+    <input type="file" name="passport_photo" accept=".jpg,.jpeg,.png" required>
 
   <label>10 + 12 / Equivalent Marks Card (PDF)</label>
   <input type="file" name="marks_12" accept="application/pdf" required>
