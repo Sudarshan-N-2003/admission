@@ -38,11 +38,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <?php
 $docs = [
-  'marks_12' => '10+12 Marks Card',
-  'transfer_certificate' => 'Transfer Certificate',
+  'marks_10' => '10th Marks Card',
+  'marks_12' => '12th / Diploma Marks Card',
   'study_certificate' => 'Study Certificate',
-  'photo' => 'Photograph',
-  'signature' => 'Student Signature'
+  'transfer_certificate' => 'Transfer Certificate',
+  'photo' => 'Photograph'
 ];
 
 foreach ($docs as $k=>$v):
