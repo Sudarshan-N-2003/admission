@@ -212,3 +212,91 @@ function send_email_with_attachment(
         return false;
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+function build_application_pdf_html(array $record): string {
+
+    $d = $record['data'];
+    $f = $record['files'];
+
+    $photo = '';
+    if (!empty($f['student_signature']) && file_exists($f['student_signature'])) {
+        $img = base64_encode(file_get_contents($f['student_signature']));
+        $photo = "<img src='data:image/png;base64,$img' style='width:120px;height:60px;border:1px solid #000'>";
+    }
+
+    $admissionDetails = '';
+    if ($d['admission_through'] === 'KEA') {
+        $admissionDetails = "
+            <p><b>Admission Through:</b> KEA</p>
+            <p><b>CET Number:</b> {$d['cet_number']}</p>
+            <p><b>CET Rank:</b> {$d['cet_rank']}</p>
+            <p><b>Quota:</b> {$d['seat_allotted']}</p>
+            <p><b>Allotted Branch:</b> {$d['allotted_branch']}</p>
+        ";
+    } else {
+        $admissionDetails = "
+            <p><b>Admission Through:</b> MANAGEMENT</p>
+            <p><b>Allotted Branch:</b> {$d['allotted_branch']}</p>
+        ";
+    }
+
+    return "
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+body{font-family:Arial;font-size:12px}
+h2{text-align:center}
+.section{margin-bottom:10px}
+.box{border:1px solid #000;padding:8px}
+</style>
+</head>
+<body>
+
+<h2>Vijay Vittal Institute of Technology</h2>
+<p style='text-align:center'>Admission Application</p>
+
+<div class='box section'>
+  <p><b>Application ID:</b> {$record['application_id']}</p>
+  <p><b>Student Name:</b> {$d['student_name']}</p>
+  <p><b>DOB:</b> {$d['dob']}</p>
+  <p><b>Mobile:</b> {$d['mobile']}</p>
+  <p><b>Guardian Mobile:</b> {$d['guardian_mobile']}</p>
+  <p><b>State:</b> {$d['state']}</p>
+  <p><b>Category:</b> {$d['category']}</p>
+  <p><b>Sub Caste:</b> {$d['sub_caste']}</p>
+</div>
+
+<div class='box section'>
+  <h4>Admission Details</h4>
+  $admissionDetails
+</div>
+
+<div class='box section'>
+  <h4>Educational Details</h4>
+  <p><b>Previous Combination:</b> {$d['prev_combination']}</p>
+  <p><b>Previous College:</b> {$d['prev_college']}</p>
+  <p><b>Address:</b> {$d['permanent_address']}</p>
+</div>
+
+<div class='box section'>
+  <h4>Student Signature</h4>
+  $photo
+</div>
+
+</body>
+</html>
+";
+}
