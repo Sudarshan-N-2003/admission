@@ -37,8 +37,11 @@
     <option value="FEMALE">Female</option>
   </select>
 
-<label>Student Name</label>
-  <input type="text" name="student_name" required oninput="this.value=this.value.toUpperCase()">
+<label>Father/Gaurdian Name</label>
+  <input type="text" name="father_name" required oninput="this.value=this.value.toUpperCase()">
+
+<label>Mother/Gaurdian Name</label>
+  <input type="text" name="mother_name" required oninput="this.value=this.value.toUpperCase()">
 
 
   <label>Mobile Number</label>
