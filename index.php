@@ -37,6 +37,10 @@
     <option value="FEMALE">Female</option>
   </select>
 
+<label>Student Name</label>
+  <input type="text" name="student_name" required oninput="this.value=this.value.toUpperCase()">
+
+
   <label>Mobile Number</label>
   <input type="text" name="mobile" pattern="\d{10}" required>
 
