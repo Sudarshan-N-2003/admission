@@ -187,3 +187,14 @@ $dompdf->loadHtml($pdfHtml);
 $dompdf->setPaper('A4', 'portrait');
 $dompdf->render();
 file_put_contents($pdfPath, $dompdf->output());
+
+
+
+
+// store info for success page
+$_SESSION['application_id'] = $application_id;
+$_SESSION['pdf_path'] = $pdfPath;
+
+// redirect to success page
+header("Location: success.php");
+exit;
