@@ -194,7 +194,11 @@ $dompdf->setPaper('A4','portrait');
 $dompdf->render();
 
 $dompdf->stream(
-    $applicationId . '_VVIT_Application.pdf',
-    ['Attachment' => true]
+// mark as printed (only once)
+if ($d['printed_at'] === null) {
+    $pdo->prepare(
+        "UPDATE admissions SET printed_at = NOW() WHERE application_id = :id"
+    )->execute([':id' => $applicationId]);
+}
 );
 exit;
