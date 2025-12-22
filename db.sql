@@ -79,7 +79,7 @@ CREATE TABLE admissions (
 
 
 
-
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 INSERT INTO admin_users (email, password_hash)
 VALUES (
