@@ -1,21 +1,87 @@
 <?php
+/**
+ * admin/print_pdf.php
+ * Prints VVIT Admission Application using Application ID
+ */
+
 require_once 'auth.php';
 require_once '../db.php';
 require_once '../vendor/autoload.php';
+require_once '../r2.php';
 
 use Dompdf\Dompdf;
 
-$id = $_GET['id'] ?? '';
-if (!$id) die('Invalid Application ID');
+/* ===============================
+   1. GET & VALIDATE APPLICATION ID
+================================ */
 
-$stmt = $pdo->prepare("SELECT * FROM admissions WHERE application_id = :id");
-$stmt->execute([':id' => $id]);
+$applicationId = $_GET['id'] ?? '';
+if ($applicationId === '') {
+    die('Invalid Application ID');
+}
+
+/* ===============================
+   2. FETCH STUDENT DATA FROM DB
+================================ */
+
+$stmt = $pdo->prepare(
+    "SELECT * FROM admissions WHERE application_id = :id"
+);
+$stmt->execute([':id' => $applicationId]);
 $d = $stmt->fetch();
 
-if (!$d) die('Application not found');
+if (!$d) {
+    die('Application not found');
+}
+
+/* ===============================
+   3. PREPARE DATE / YEAR
+================================ */
 
 $timestamp = date('d-m-Y H:i', strtotime($d['created_at']));
-$yearRange = date('Y') . '-' . (date('Y') + 1);
+$academicYear = date('Y') . '-' . (date('Y') + 1);
+
+/* ===============================
+   4. FETCH PHOTO & SIGNATURE FROM R2
+================================ */
+
+$r2Files = json_decode($d['r2_files'], true) ?? [];
+
+$photoBase64 = '';
+$signBase64  = '';
+
+if (!empty($r2Files['passport_photo'])) {
+    $tmpPhoto = download_from_r2($r2Files['passport_photo']);
+    $photoBase64 = base64_encode(file_get_contents($tmpPhoto));
+}
+
+if (!empty($r2Files['student_signature'])) {
+    $tmpSign = download_from_r2($r2Files['student_signature']);
+    $signBase64 = base64_encode(file_get_contents($tmpSign));
+}
+
+/* ===============================
+   5. ADMISSION DETAILS BLOCK
+================================ */
+
+if ($d['admission_through'] === 'KEA') {
+    $admissionBlock = "
+        <p><b>Admission Through:</b> KEA</p>
+        <p><b>CET Number:</b> {$d['cet_number']}</p>
+        <p><b>CET Rank:</b> {$d['cet_rank']}</p>
+        <p><b>Quota:</b> {$d['seat_allotted']}</p>
+        <p><b>Allotted Branch:</b> {$d['allotted_branch']}</p>
+    ";
+} else {
+    $admissionBlock = "
+        <p><b>Admission Through:</b> MANAGEMENT</p>
+        <p><b>Allotted Branch:</b> {$d['allotted_branch']}</p>
+    ";
+}
+
+/* ===============================
+   6. BUILD PDF HTML (VVIT FORMAT)
+================================ */
 
 $html = <<<HTML
 <!DOCTYPE html>
@@ -30,9 +96,9 @@ h2,h3{text-align:center;margin:4px 0}
 .col{flex:1;padding:4px}
 .label{font-weight:bold}
 .table{width:100%;border-collapse:collapse}
-.table th,.table td{border:1px solid #000;padding:4px;text-align:left}
+.table th,.table td{border:1px solid #000;padding:4px}
 .cut{border-top:2px dashed #000;margin:10px 0}
-.photo{border:1px solid #000;width:90px;height:110px;text-align:center;font-size:10px}
+.photo{border:1px solid #000;width:90px;height:110px}
 .sign{margin-top:20px;display:flex;justify-content:space-between}
 </style>
 </head>
@@ -46,64 +112,66 @@ h2,h3{text-align:center;margin:4px 0}
 
 <div class="row">
   <div class="col"><b>APPLICATION NO:</b> {$d['application_id']}</div>
-  <div class="col" style="text-align:right"><b>TIMESTAMP:</b> $timestamp</div>
+  <div class="col" style="text-align:right"><b>DATE & TIME:</b> $timestamp</div>
 </div>
 
 <div class="box">
 <h3>PERSONAL INFORMATION</h3>
 
 <div class="row">
-  <div class="col"><span class="label">STUDENT NAME:</span> {$d['student_name']}</div>
-  <div class="photo">Passport<br>Size Photo</div>
+  <div class="col">
+    <p><b>Student Name:</b> {$d['student_name']}</p>
+    <p><b>DOB:</b> {$d['dob']}</p>
+    <p><b>Gender:</b> {$d['gender']}</p>
+    <p><b>Category:</b> {$d['category']}</p>
+    <p><b>Sub Caste:</b> {$d['sub_caste']}</p>
+  </div>
+  <div class="photo">
+    <img src="data:image/jpeg;base64,$photoBase64"
+         style="width:90px;height:110px">
+  </div>
 </div>
 
-<p><b>GENDER:</b> {$d['gender']} &nbsp;&nbsp;
-<b>RELIGION:</b> {$d['religion']} &nbsp;&nbsp;
-<b>CATEGORY:</b> {$d['category']} &nbsp;&nbsp;
-<b>SUB CASTE:</b> {$d['sub_caste']}</p>
+<p><b>Father / Guardian Name:</b> {$d['father_name']}</p>
+<p><b>Mother Name:</b> {$d['mother_name']}</p>
 
-<p><b>DATE OF BIRTH:</b> {$d['dob']}</p>
-<p><b>FATHER / GUARDIAN NAME:</b> {$d['father_name']}</p>
-<p><b>MOTHER / GUARDIAN NAME:</b> {$d['mother_name']}</p>
+<p><b>Mobile:</b> {$d['mobile']} &nbsp;&nbsp;
+<b>Guardian Mobile:</b> {$d['guardian_mobile']}</p>
 
-<p><b>E-MAIL ID:</b> {$d['email']}</p>
-<p><b>GUARDIAN MOBILE NUMBER:</b> {$d['guardian_mobile']} &nbsp;&nbsp;
-<b>MOBILE:</b> {$d['mobile']}</p>
+<p><b>Email:</b> {$d['email']}</p>
+<p><b>Address:</b> {$d['permanent_address']}</p>
+<p><b>State:</b> {$d['state']}</p>
 
-<p><b>PERMANENT ADDRESS:</b> {$d['permanent_address']}</p>
+$admissionBlock
 
-<p><b>STATE:</b> {$d['state']}</p>
+<p><b>Previous Combination:</b> {$d['prev_combination']}</p>
+<p><b>Previous College:</b> {$d['prev_college']}</p>
 
-<p>
-<b>ADMISSION THROUGH:</b> {$d['admission_through']} &nbsp;&nbsp;
-<b>ALLOTTED BRANCH:</b> {$d['allotted_branch']}
-</p>
-
-<p><b>PREVIOUS COMBINATION:</b> {$d['prev_combination']}</p>
 </div>
 
 <div class="cut"></div>
 
 <h3>ACKNOWLEDGMENT – STUDENT COPY</h3>
 <p>
-This is to certify that the following documents have been received from
-<b>{$d['student_name']}</b>.
-Taken admission for BE in the Branch <b>{$d['allotted_branch']}</b>
-from the academic year <b>$yearRange</b>
+This is to certify that the student <b>{$d['student_name']}</b> has taken admission
+to <b>{$d['allotted_branch']}</b> for the academic year <b>$academicYear</b>.
 </p>
 
 <table class="table">
-<tr><th>Sl #</th><th>DOCUMENTS TO BE SUBMITTED</th><th>STATUS</th><th>SUBMITTED DATE</th></tr>
-<tr><td>1</td><td>10TH MARKS CARD</td><td></td><td></td></tr>
-<tr><td>2</td><td>12TH / DIPLOMA MARKS CARD</td><td></td><td></td></tr>
-<tr><td>3</td><td>STUDY CERTIFICATE</td><td></td><td></td></tr>
-<tr><td>4</td><td>TRANSFER CERTIFICATE</td><td></td><td></td></tr>
-<tr><td>5</td><td>PHOTOGRAPH</td><td></td><td></td></tr>
+<tr><th>Sl</th><th>Document</th><th>Status</th><th>Date</th></tr>
+<tr><td>1</td><td>10th Marks Card</td><td></td><td></td></tr>
+<tr><td>2</td><td>12th / Diploma Marks Card</td><td></td><td></td></tr>
+<tr><td>3</td><td>Study Certificate</td><td></td><td></td></tr>
+<tr><td>4</td><td>Transfer Certificate</td><td></td><td></td></tr>
+<tr><td>5</td><td>Photograph</td><td></td><td></td></tr>
 </table>
 
 <div class="sign">
-<div>STUDENT SIGNATURE</div>
-<div>ADMISSION DIRECTOR SIGNATURE</div>
+  <div>
+    Student Signature<br>
+    <img src="data:image/png;base64,$signBase64" style="width:120px;height:50px">
+  </div>
+  <div>Admission Officer Signature</div>
 </div>
 
 <div class="cut"></div>
@@ -115,9 +183,17 @@ from the academic year <b>$yearRange</b>
 </html>
 HTML;
 
+/* ===============================
+   7. GENERATE & DOWNLOAD PDF
+================================ */
+
 $dompdf = new Dompdf();
 $dompdf->loadHtml($html);
 $dompdf->setPaper('A4','portrait');
 $dompdf->render();
-$dompdf->stream($id.'_VVIT_Application.pdf',['Attachment'=>true]);
+
+$dompdf->stream(
+    $applicationId . '_VVIT_Application.pdf',
+    ['Attachment' => true]
+);
 exit;
