@@ -54,6 +54,49 @@
   <label>Previous College Name</label>
   <input type="text" name="prev_college" required oninput="this.value=this.value.toUpperCase()">
 
+<label>State</label>
+<select name="state" required>
+  <option value="KARNATAKA" selected>Karnataka</option>
+
+  <option>ANDHRA PRADESH</option>
+  <option>ARUNACHAL PRADESH</option>
+  <option>ASSAM</option>
+  <option>BIHAR</option>
+  <option>CHHATTISGARH</option>
+  <option>GOA</option>
+  <option>GUJARAT</option>
+  <option>HARYANA</option>
+  <option>HIMACHAL PRADESH</option>
+  <option>JHARKHAND</option>
+  <option>KERALA</option>
+  <option>MADHYA PRADESH</option>
+  <option>MAHARASHTRA</option>
+  <option>MANIPUR</option>
+  <option>MEGHALAYA</option>
+  <option>MIZORAM</option>
+  <option>NAGALAND</option>
+  <option>ODISHA</option>
+  <option>PUNJAB</option>
+  <option>RAJASTHAN</option>
+  <option>SIKKIM</option>
+  <option>TAMIL NADU</option>
+  <option>TELANGANA</option>
+  <option>TRIPURA</option>
+  <option>UTTAR PRADESH</option>
+  <option>UTTARAKHAND</option>
+  <option>WEST BENGAL</option>
+
+  <!-- Union Territories -->
+  <option>ANDAMAN AND NICOBAR ISLANDS</option>
+  <option>CHANDIGARH</option>
+  <option>DADRA AND NAGAR HAVELI AND DAMAN AND DIU</option>
+  <option>DELHI</option>
+  <option>JAMMU AND KASHMIR</option>
+  <option>LADAKH</option>
+  <option>LAKSHADWEEP</option>
+  <option>PUDUCHERRY</option>
+</select>
+
   <label>Permanent Address</label>
   <textarea name="permanent_address" required></textarea>
 
