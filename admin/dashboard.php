@@ -1,50 +1,34 @@
 <?php
 require_once 'auth.php';
-require_once '../db.php';
-
-$apps = $pdo->query("
-    SELECT application_id, student_name, admission_through, allotted_branch, created_at
-    FROM admissions
-    ORDER BY created_at DESC
-")->fetchAll();
 ?>
 <!DOCTYPE html>
 <html>
 <head>
-<title>Admin Dashboard</title>
+<title>Office Dashboard</title>
 <link rel="stylesheet" href="../assets/styles.css">
+<style>
+.admin-btn{
+  display:block;
+  text-align:center;
+  padding:14px;
+  margin:15px 0;
+  background:#1e40af;
+  color:#fff;
+  border-radius:8px;
+  text-decoration:none;
+  font-weight:bold;
+}
+</style>
 </head>
 <body>
 
 <div class="container">
-<h2>Admissions Dashboard</h2>
+  <h2>Admission Office Panel</h2>
 
-<table border="1" width="100%">
-<tr>
-<th>ID</th>
-<th>Name</th>
-<th>Type</th>
-<th>Branch</th>
-<th>Date</th>
-<th>Action</th>
-</tr>
+  <a href="print.php" class="admin-btn">Print Application</a>
+  <a href="export.php" class="admin-btn">Export Data</a>
 
-<?php foreach ($apps as $a): ?>
-<tr>
-<td><?= $a['application_id'] ?></td>
-<td><?= htmlspecialchars($a['student_name']) ?></td>
-<td><?= $a['admission_through'] ?></td>
-<td><?= $a['allotted_branch'] ?></td>
-<td><?= date('d-m-Y', strtotime($a['created_at'])) ?></td>
-<td>
-<a href="view_application.php?id=<?= $a['application_id'] ?>">View</a>
-</td>
-</tr>
-<?php endforeach; ?>
-
-</table>
-
-<a href="logout.php">Logout</a>
+  <a href="logout.php" style="display:block;margin-top:20px;">Logout</a>
 </div>
 
 </body>
