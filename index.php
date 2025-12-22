@@ -30,6 +30,13 @@
   <label>Date of Birth</label>
   <input type="date" name="dob" required>
 
+<label>Gender</label>
+  <select name="gender" id=gender" required>
+    <option value="">Select</option>
+    <option value="MALE">Male</option>
+    <option value="FEMALE">Female</option>
+  </select>
+
   <label>Mobile Number</label>
   <input type="text" name="mobile" pattern="\d{10}" required>
 
