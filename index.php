@@ -204,6 +204,12 @@
   <label>Transfer Certificate (PDF)</label>
   <input type="file" name="transfer_certificate" accept="application/pdf" required>
 
+<label>Study Certificate (PDF)</label>
+<input type="file"
+       name="study_certificate"
+       accept="application/pdf"
+       required>
+
   <label>Student Signature (JPG / PNG)</label>
   <input type="file" name="student_signature" accept="image/*" required>
 
