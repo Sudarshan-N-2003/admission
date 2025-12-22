@@ -19,3 +19,18 @@ email_sent BOOLEAN DEFAULT FALSE
 
 
 CREATE INDEX IF NOT EXISTS ix_submissions_student_name ON submissions ((data->>'student_name'));
+
+
+
+
+
+
+ALTER TABLE admissions
+ALTER COLUMN document_status
+SET DEFAULT '{
+  "marks_10": "",
+  "marks_12": "",
+  "study_certificate": "",
+  "transfer_certificate": "",
+  "photo": ""
+}';
