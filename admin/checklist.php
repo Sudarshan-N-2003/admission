@@ -2,23 +2,68 @@
 require_once 'auth.php';
 require_once '../db.php';
 
-$id = $_GET['id'] ?? '';
-if (!$id) die('Invalid Application ID');
+/* ===============================
+   GET APPLICATION ID
+================================ */
+$applicationId = $_GET['id'] ?? '';
+if ($applicationId === '') {
+    die('Invalid Application ID');
+}
 
-$stmt = $pdo->prepare("SELECT * FROM admissions WHERE application_id = :id");
-$stmt->execute([':id'=>$id]);
+/* ===============================
+   FETCH APPLICATION
+================================ */
+$stmt = $pdo->prepare(
+    "SELECT application_id, student_name, document_status, printed_at
+     FROM admissions
+     WHERE application_id = :id"
+);
+$stmt->execute([':id' => $applicationId]);
 $d = $stmt->fetch();
-if (!$d) die('Application not found');
 
-$status = json_decode($d['document_status'], true);
+if (!$d) {
+    die('Application not found');
+}
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+/* ===============================
+   CHECK IF LOCKED (PRINTED)
+================================ */
+$locked = !empty($d['printed_at']);
+
+/* ===============================
+   DOCUMENT STATUS ARRAY
+================================ */
+$status = json_decode($d['document_status'], true) ?? [
+    'marks_10' => '',
+    'marks_12' => '',
+    'study_certificate' => '',
+    'transfer_certificate' => '',
+    'photo' => ''
+];
+
+/* ===============================
+   SAVE CHECKLIST
+================================ */
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$locked) {
+
     $newStatus = json_encode($_POST['docs']);
-    $pdo->prepare(
-        "UPDATE admissions SET document_status=:s WHERE application_id=:id"
-    )->execute([':s'=>$newStatus, ':id'=>$id]);
 
-    header("Location: checklist.php?id=$id");
+    $pdo->prepare(
+        "UPDATE admissions
+         SET document_status = :ds
+         WHERE application_id = :id"
+    )->execute([
+        ':ds' => $newStatus,
+        ':id' => $applicationId
+    ]);
+
+    // If user clicked "Save & Print"
+    if ($_POST['action'] === 'print') {
+        header("Location: print_pdf.php?id=$applicationId");
+        exit;
+    }
+
+    header("Location: checklist.php?id=$applicationId");
     exit;
 }
 ?>
@@ -31,10 +76,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body>
 
 <div class="container">
-<h2>Document Checklist</h2>
-<p><b>Application ID:</b> <?= $id ?></p>
+
+<div class="topbar">
+  <h2>Document Checklist</h2>
+  <a href="dashboard.php" class="college-btn">Back</a>
+</div>
+
+<p><b>Application ID:</b> <?= htmlspecialchars($applicationId) ?></p>
+<p><b>Student Name:</b> <?= htmlspecialchars($d['student_name']) ?></p>
+
+<?php if ($locked): ?>
+  <div class="flash info">
+    Checklist is <b>LOCKED</b> because application is already printed.
+  </div>
+<?php endif; ?>
 
 <form method="post">
+
+<table class="table">
+<tr>
+  <th>Sl</th>
+  <th>Document</th>
+  <th>Status</th>
+</tr>
 
 <?php
 $docs = [
@@ -45,22 +109,36 @@ $docs = [
   'photo' => 'Photograph'
 ];
 
-foreach ($docs as $k=>$v):
+$i = 1;
+foreach ($docs as $key => $label):
 ?>
-<label><?= $v ?></label>
-<select name="docs[<?= $k ?>]">
-  <option value="">Pending</option>
-  <option value="RECEIVED" <?= ($status[$k]??'')==='RECEIVED'?'selected':'' ?>>
-    Received
-  </option>
-</select>
+<tr>
+  <td><?= $i++ ?></td>
+  <td><?= $label ?></td>
+  <td>
+    <select name="docs[<?= $key ?>]" <?= $locked ? 'disabled' : '' ?>>
+      <option value="">Pending</option>
+      <option value="RECEIVED"
+        <?= ($status[$key] ?? '') === 'RECEIVED' ? 'selected' : '' ?>>
+        Received
+      </option>
+    </select>
+  </td>
+</tr>
 <?php endforeach; ?>
+</table>
 
-<button type="submit">Save Status</button>
+<?php if (!$locked): ?>
+<div class="actions">
+  <button type="submit" class="secondary">Save</button>
+  <button type="submit" name="action" value="print" class="btn-primary">
+    Save & Print Application
+  </button>
+</div>
+<?php endif; ?>
+
 </form>
 
-<a href="dashboard.php">Back</a>
 </div>
-
 </body>
 </html>
