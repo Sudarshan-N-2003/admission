@@ -29,6 +29,7 @@ $stmt = $pdo->prepare(
 );
 $stmt->execute([':id' => $applicationId]);
 $d = $stmt->fetch();
+$status = json_decode($d['document_status'], true) ?? [];
 
 if (!$d) {
     die('Application not found');
@@ -159,11 +160,11 @@ to <b>{$d['allotted_branch']}</b> for the academic year <b>$academicYear</b>.
 
 <table class="table">
 <tr><th>Sl</th><th>Document</th><th>Status</th><th>Date</th></tr>
-<tr><td>1</td><td>10th Marks Card</td><td></td><td></td></tr>
-<tr><td>2</td><td>12th / Diploma Marks Card</td><td></td><td></td></tr>
-<tr><td>3</td><td>Study Certificate</td><td></td><td></td></tr>
-<tr><td>4</td><td>Transfer Certificate</td><td></td><td></td></tr>
-<tr><td>5</td><td>Photograph</td><td></td><td></td></tr>
+<tr><td>1</td><td>10th Marks Card</td><td><?= $status['marks_10'] ?? '' ?></td><td></td></tr>
+<tr><td>2</td><td>12th / Diploma Marks Card</td><td><?= $status['marks_12'] ?? '' ?></td><td></td></tr>
+<tr><td>3</td><td>Study Certificate</td><td><?= $status['study_certificate'] ?? '' ?></td><td></td></tr>
+<tr><td>4</td><td>Transfer Certificate</td><td><?= $status['transfer_certificate'] ?? '' ?></td><td></td></tr>
+<tr><td>5</td><td>Photograph</td><td><?= $status['photo'] ?? '' ?></td><td></td></tr>
 </table>
 
 <div class="sign">
