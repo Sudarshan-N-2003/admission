@@ -175,15 +175,19 @@
 </div>
 
   <!-- MANAGEMENT DETAILS -->
-  <div id="management_section" class="hidden">
-    <label>Allotted Branch</label>
-    <select name="management_branch">
-      <option>CSE</option>
-      <option>AIML</option>
-      <option>EC</option>
-      <option>ME</option>
-    </select>
-  </div>
+<div id="management_section" class="hidden">
+  <label>Allotted Branch</label>
+  <select name="allotted_branch_management">
+    <option value="">Select Branch</option>
+    <option>CSE</option>
+    <option>AIML</option>
+    <option>CS (AIML)</option>
+    <option>CS (DS)</option>
+    <option>EC</option>
+    <option>CV</option>
+    <option>ME</option>
+  </select>
+</div>
 
   <button type="button" onclick="nextStep()">Next</button>
 </div>
