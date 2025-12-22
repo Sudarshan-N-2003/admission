@@ -166,3 +166,24 @@ try {
 
 header('Location: index.php');
 exit;
+
+
+
+
+
+use Dompdf\Dompdf;
+
+// Build PDF
+$pdfHtml = build_application_pdf_html([
+    'application_id' => $application_id,
+    'data' => $data,
+    'files' => $files
+]);
+
+$pdfPath = $uploadDir . '/' . $application_id . '.pdf';
+
+$dompdf = new Dompdf();
+$dompdf->loadHtml($pdfHtml);
+$dompdf->setPaper('A4', 'portrait');
+$dompdf->render();
+file_put_contents($pdfPath, $dompdf->output());
