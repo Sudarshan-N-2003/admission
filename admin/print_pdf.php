@@ -159,7 +159,7 @@ to <b>{$d['allotted_branch']}</b> for the academic year <b>$academicYear</b>.
 </p>
 
 <table class="table">
-<tr><th>Sl</th><th>Document</th><th>Status</th><th>Date</th></tr>
+<tr><th>Sl.</th><th>Document</th><th>Status</th><th>Date</th></tr>
 <tr><td>1</td><td>10th Marks Card</td><td><?= $status['marks_10'] ?? '' ?></td><td></td></tr>
 <tr><td>2</td><td>12th / Diploma Marks Card</td><td><?= $status['marks_12'] ?? '' ?></td><td></td></tr>
 <tr><td>3</td><td>Study Certificate</td><td><?= $status['study_certificate'] ?? '' ?></td><td></td></tr>
