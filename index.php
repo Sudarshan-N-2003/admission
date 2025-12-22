@@ -37,6 +37,25 @@
     <option value="FEMALE">Female</option>
   </select>
 
+<label>Category</label>
+<select name="category" required>
+  <option value="">Select Category</option>
+  <option>CAT 1</option>
+  <option>2A</option>
+  <option>2B</option>
+  <option>3A</option>
+  <option>3B</option>
+  <option>SC</option>
+  <option>ST</option>
+  <option>NOT APPLICABLE</option>
+</select>
+
+<label>Sub Caste</label>
+<input type="text"
+       name="sub_caste"
+       placeholder="Eg: Lingayat, Reddy"
+       oninput="this.value=this.value.toUpperCase()">
+
 <label>Father/Gaurdian Name</label>
   <input type="text" name="father_name" required oninput="this.value=this.value.toUpperCase()">
 
@@ -118,13 +137,42 @@
   </select>
 
   <!-- KEA DETAILS -->
-  <div id="kea_section" class="hidden">
-    <label>CET Number</label>
-    <input type="text" name="cet_number">
+ <div id="kea_section" class="hidden">
 
-    <label>CET Rank</label>
-    <input type="text" name="cet_rank">
-  </div>
+  <label>CET Number</label>
+  <input type="text" name="cet_number">
+
+  <label>CET Rank</label>
+  <input type="text" name="cet_rank">
+
+  <label>Allotted Quota</label>
+  <select name="seat_allotted">
+    <option value="">Select Quota</option>
+    <option>GM</option>
+    <option>SNQ</option>
+    <option>SC</option>
+    <option>ST</option>
+    <option>OBC</option>
+    <option>GMR</option>
+    <option>GMK</option>
+    <option>KK / HK</option>
+    <option>EWS</option>
+    <option>SPL (NCC / SPORTS / DEFENCE / PWD)</option>
+  </select>
+
+  <label>Allotted Branch</label>
+  <select name="allotted_branch">
+    <option value="">Select Branch</option>
+    <option>CSE</option>
+    <option>AIML</option>
+    <option>CS (AIML)</option>
+    <option>CS (DS)</option>
+    <option>EC</option>
+    <option>CV</option>
+    <option>ME</option>
+  </select>
+
+</div>
 
   <!-- MANAGEMENT DETAILS -->
   <div id="management_section" class="hidden">
