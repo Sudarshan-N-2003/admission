@@ -92,7 +92,9 @@ while ($row = $stmt->fetch()) {
     echo $row['prev_college'] . "\t";
 
     // remove line breaks from address
-    echo preg_replace("/\r|\n/", " ", $row['permanent_address']) . "\t";
+  $address = $row['permanent_address'] ?? '';
+echo preg_replace("/\r|\n/", " ", $address) . "\t";
+
 
     echo date('d-m-Y H:i', strtotime($row['created_at'])) . "\n";
 }
