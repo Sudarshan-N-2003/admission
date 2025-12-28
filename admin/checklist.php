@@ -1,6 +1,11 @@
 <?php
 require_once 'auth.php';
-require_once '../db.php';
+require_once __DIR__ . '/../db.php';
+
+/* ===============================
+   GET DB CONNECTION (CRITICAL)
+================================ */
+$pdo = get_db();
 
 /* ===============================
    GET APPLICATION ID
@@ -31,7 +36,7 @@ if (!$d) {
 $locked = !empty($d['printed_at']);
 
 /* ===============================
-   DOCUMENT STATUS ARRAY
+   DOCUMENT STATUS
 ================================ */
 $status = json_decode($d['document_status'], true) ?? [
     'marks_10' => '',
@@ -46,19 +51,19 @@ $status = json_decode($d['document_status'], true) ?? [
 ================================ */
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$locked) {
 
-    $newStatus = json_encode($_POST['docs']);
+    $newStatus = $_POST['docs'] ?? [];
+    $jsonStatus = json_encode($newStatus);
 
     $pdo->prepare(
         "UPDATE admissions
          SET document_status = :ds
          WHERE application_id = :id"
     )->execute([
-        ':ds' => $newStatus,
+        ':ds' => $jsonStatus,
         ':id' => $applicationId
     ]);
 
-    // If user clicked "Save & Print"
-    if ($_POST['action'] === 'print') {
+    if (($_POST['action'] ?? '') === 'print') {
         header("Location: print_pdf.php?id=$applicationId");
         exit;
     }
@@ -86,9 +91,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$locked) {
 <p><b>Student Name:</b> <?= htmlspecialchars($d['student_name']) ?></p>
 
 <?php if ($locked): ?>
-  <div class="flash info">
-    Checklist is <b>LOCKED</b> because application is already printed.
-  </div>
+<div class="flash info">
+  Checklist locked — application already printed
+</div>
 <?php endif; ?>
 
 <form method="post">
@@ -126,13 +131,14 @@ foreach ($docs as $key => $label):
   </td>
 </tr>
 <?php endforeach; ?>
+
 </table>
 
 <?php if (!$locked): ?>
 <div class="actions">
   <button type="submit" class="secondary">Save</button>
   <button type="submit" name="action" value="print" class="btn-primary">
-    Save & Print Application
+    Save & Print
   </button>
 </div>
 <?php endif; ?>
