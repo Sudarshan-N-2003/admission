@@ -1,49 +1,68 @@
 <?php
 session_start();
-require_once '../db.php';
 
+/* ===============================
+   LOAD DATABASE FUNCTION
+================================ */
+require_once __DIR__ . '/../db.php';
+
+/* ✅ THIS LINE IS CRITICAL */
+$pdo = get_db();
+
+/* ===============================
+   HANDLE LOGIN
+================================ */
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $email = trim($_POST['email']);
-    $pass  = $_POST['password'];
 
-    $stmt = $pdo->prepare("SELECT * FROM admin_users WHERE email = :email");
+    $email = trim($_POST['email'] ?? '');
+    $password = $_POST['password'] ?? '';
+
+    $stmt = $pdo->prepare(
+        "SELECT id, email, password_hash
+         FROM admin_users
+         WHERE email = :email"
+    );
     $stmt->execute([':email' => $email]);
     $user = $stmt->fetch();
 
-    if ($user && password_verify($pass, $user['password_hash'])) {
+    if ($user && password_verify($password, $user['password_hash'])) {
+
         $_SESSION['admin_id'] = $user['id'];
         $_SESSION['admin_email'] = $user['email'];
+
         header("Location: dashboard.php");
         exit;
-    } else {
-        $error = "Invalid login credentials";
     }
+
+    $error = "Invalid email or password";
 }
 ?>
 <!DOCTYPE html>
 <html>
 <head>
-<title>College Login</title>
-<link rel="stylesheet" href="../assets/styles.css">
+    <title>College Login</title>
+    <link rel="stylesheet" href="../assets/styles.css">
 </head>
 <body>
 
 <div class="container">
-<h2>College Login</h2>
+    <h2>College Login</h2>
 
-<?php if (!empty($error)): ?>
-<div class="flash error"><?= $error ?></div>
-<?php endif; ?>
+    <?php if (!empty($error)): ?>
+        <div class="flash error"><?= htmlspecialchars($error) ?></div>
+    <?php endif; ?>
 
-<form method="post">
-<label>Email</label>
-<input type="email" name="email" required>
+    <form method="post">
+        <label>Email</label>
+        <input type="email" name="email" required>
 
-<label>Password</label>
-<input type="password" name="password" required>
+        <label>Password</label>
+        <input type="password" name="password" required>
 
-<button type="submit">Login</button>
-</form>
+        <div class="actions">
+            <button type="submit" class="btn-primary">Login</button>
+        </div>
+    </form>
 </div>
 
 </body>
