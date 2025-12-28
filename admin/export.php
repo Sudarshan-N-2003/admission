@@ -1,18 +1,23 @@
 <?php
 require_once 'auth.php';
-require_once '../db.php';
+require_once __DIR__ . '/../db.php';
 
-/*
- Excel headers
-*/
+/* ===============================
+   GET DB CONNECTION
+================================ */
+$pdo = get_db();
+
+/* ===============================
+   EXCEL HEADERS
+================================ */
 header("Content-Type: application/vnd.ms-excel");
 header("Content-Disposition: attachment; filename=VVIT_Admissions_" . date('Ymd_His') . ".xls");
 header("Pragma: no-cache");
 header("Expires: 0");
 
-/*
- Column headings
-*/
+/* ===============================
+   COLUMN HEADERS
+================================ */
 echo "Application ID\t";
 echo "Student Name\t";
 echo "Gender\t";
@@ -33,10 +38,10 @@ echo "Previous College\t";
 echo "Permanent Address\t";
 echo "Registered Date & Time\n";
 
-/*
- Fetch data
-*/
-$stmt = $pdo->query("
+/* ===============================
+   FETCH DATA
+================================ */
+$sql = "
     SELECT
         application_id,
         student_name,
@@ -59,8 +64,13 @@ $stmt = $pdo->query("
         created_at
     FROM admissions
     ORDER BY created_at DESC
-");
+";
 
+$stmt = $pdo->query($sql);
+
+/* ===============================
+   OUTPUT ROWS
+================================ */
 while ($row = $stmt->fetch()) {
 
     echo $row['application_id'] . "\t";
@@ -80,7 +90,10 @@ while ($row = $stmt->fetch()) {
     echo $row['allotted_branch'] . "\t";
     echo $row['prev_combination'] . "\t";
     echo $row['prev_college'] . "\t";
+
+    // remove line breaks from address
     echo preg_replace("/\r|\n/", " ", $row['permanent_address']) . "\t";
+
     echo date('d-m-Y H:i', strtotime($row['created_at'])) . "\n";
 }
 
