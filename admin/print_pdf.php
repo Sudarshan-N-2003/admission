@@ -4,7 +4,6 @@ require_once __DIR__ . '/../db.php';
 require_once __DIR__ . '/../vendor/autoload.php';
 
 use Dompdf\Dompdf;
-use Endroid\QrCode\Builder\Builder;
 
 /* ===============================
    DB CONNECTION
@@ -51,13 +50,11 @@ if (empty($d['printed_at'])) {
 /* ===============================
    GENERATE QR CODE
 ================================ */
-$qrResult = Builder::create()
-    ->data("VVIT Application ID: " . $applicationId)
-    ->size(120)
-    ->margin(5)
-    ->build();
 
-$qrBase64 = base64_encode($qrResult->getString());
+
+$qrText = urlencode("VVIT Application ID: " . $applicationId);
+$qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={$qrText}";
+
 
 /* ===============================
    PREPARE HTML (NO PHP INSIDE STRING)
@@ -86,7 +83,7 @@ th { background:#f3f4f6; }
     <b>Student Name:</b> ' . htmlspecialchars($d['student_name']) . '
   </div>
   <div class="qr">
-    <img src="data:image/png;base64,' . $qrBase64 . '">
+    <img src="' . $qrUrl . '" width="90">
   </div>
 </div>
 
