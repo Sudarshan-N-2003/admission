@@ -57,6 +57,19 @@ if (empty($d['printed_at'])) {
 ================================ */
 $status = json_decode($d['document_status'], true) ?? [];
 
+function branch_full_form(string $code): string {
+    $map = [
+        'CSE' => 'Computer Science & Engineering',
+        'AIML' => 'Artificial Intelligence & Machine Learning',
+        'CS (AIML)' => 'Computer Science (AI & ML)',
+        'CS (DS)' => 'Computer Science (Data Science)',
+        'EC' => 'Electronics & Communication Engineering',
+        'ME' => 'Mechanical Engineering',
+        'CV' => 'Civil Engineering'
+    ];
+    return $map[$code] ?? $code;
+}
+
 /* ===============================
    ADMISSION YEAR
 ================================ */
@@ -103,7 +116,7 @@ td,th{border:1px solid #000;padding:6px}
 </head>
 <body>
 
-<h2>VIJAYA VITTALA INSTITUTE OF TECHNOLOGY</h2>
+<h1>VIJAYA VITTALA INSTITUTE OF TECHNOLOGY</h1>
 <p class='center'>
 35/1, Dodda Gubbi Post, Hennur–Bagalur Road,<br>
 Thanisandra, Bengaluru, Karnataka – 560077
@@ -152,7 +165,7 @@ Thanisandra, Bengaluru, Karnataka – 560077
 
 <tr>
 <td><b>ADMISSION THROUGH</b></td><td>".e($d['admission_through'])."</td>
-<td><b>ALLOTTED BRANCH</b></td><td>".e($d['allotted_branch'])."</td>
+<td><b>ALLOTTED BRANCH</b></td><td>".e(branch_full_form($d['allotted_branch']))."</td>
 </tr>
 
 <tr><td><b>PREVIOUS COMBINATION</b></td><td colspan='3'>".e($d['prev_combination'])."</td></tr>
@@ -165,7 +178,7 @@ Thanisandra, Bengaluru, Karnataka – 560077
 <p>
 This is to certify that the following documents have been received from
 <b>".e($d['student_name'])."</b> for admission to <b>BE in the Branch
-".e($d['allotted_branch'])."</b> from the academic year
+".e(branch_full_form($d['allotted_branch']))."</b> from the academic year
 <b>$admissionYear</b>.
 </p>
 
@@ -189,7 +202,7 @@ This is to certify that the following documents have been received from
 <p>
 This is to certify that the following documents have been received from
 <b>".e($d['student_name'])."</b> for admission to <b>BE in the Branch
-".e($d['allotted_branch'])."</b> from the academic year
+".e(branch_full_form($d['allotted_branch']))."</b> from the academic year
 <b>$admissionYear</b>.
 </p>
 
