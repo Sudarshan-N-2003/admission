@@ -5,6 +5,13 @@ require_once __DIR__ . '/../db.php';
 $pdo = get_db();
 
 /* ===============================
+   SAFE ESCAPE FUNCTION (PHP 8.1+)
+================================ */
+function e($v): string {
+    return htmlspecialchars((string)($v ?? ''), ENT_QUOTES, 'UTF-8');
+}
+
+/* ===============================
    FILTER INPUTS
 ================================ */
 $q        = trim($_GET['q'] ?? '');
@@ -13,7 +20,7 @@ $quota    = $_GET['quota'] ?? '';
 $through  = $_GET['through'] ?? '';
 
 /* ===============================
-   BASE QUERY
+   BASE QUERY (REAL COLUMNS)
 ================================ */
 $sql = "
 SELECT
@@ -30,7 +37,7 @@ WHERE 1=1
 
 $params = [];
 
-/* SEARCH */
+/* SEARCH BY APPLICATION ID OR MOBILE */
 if ($q !== '') {
     $sql .= " AND (application_id ILIKE :q OR mobile ILIKE :q)";
     $params[':q'] = "%$q%";
@@ -76,7 +83,7 @@ $rows = $stmt->fetchAll();
     <a href="logout.php" class="college-btn">Logout</a>
   </div>
 
-  <!-- FILTER FORM -->
+  <!-- SEARCH & FILTER FORM -->
   <form method="get">
 
     <div class="row">
@@ -87,7 +94,7 @@ $rows = $stmt->fetchAll();
           type="text"
           name="q"
           placeholder="Enter Application ID or Mobile"
-          value="<?= htmlspecialchars($q) ?>"
+          value="<?= e($q) ?>"
         >
       </div>
 
@@ -123,8 +130,8 @@ $rows = $stmt->fetchAll();
         <label>Admission Through</label>
         <select name="through">
           <option value="">All</option>
-          <option value="KEA" <?= $through==='KEA'?'selected':'' ?>>KEA</option>
-          <option value="MANAGEMENT" <?= $through==='MANAGEMENT'?'selected':'' ?>>MANAGEMENT</option>
+          <option value="KEA" <?= $through === 'KEA' ? 'selected' : '' ?>>KEA</option>
+          <option value="MANAGEMENT" <?= $through === 'MANAGEMENT' ? 'selected' : '' ?>>MANAGEMENT</option>
         </select>
       </div>
 
@@ -158,13 +165,13 @@ $rows = $stmt->fetchAll();
 
     <?php foreach ($rows as $r): ?>
       <tr>
-        <td><?= htmlspecialchars($r['application_id']) ?></td>
-        <td><?= htmlspecialchars($r['student_name']) ?></td>
-        <td><?= htmlspecialchars($r['mobile']) ?></td>
-        <td><?= htmlspecialchars($r['allotted_branch']) ?></td>
-        <td><?= htmlspecialchars($r['seat_allotted']) ?></td>
-        <td><?= htmlspecialchars($r['admission_through']) ?></td>
-        <td><?= htmlspecialchars($r['created_at']) ?></td>
+        <td><?= e($r['application_id']) ?></td>
+        <td><?= e($r['student_name']) ?></td>
+        <td><?= e($r['mobile']) ?></td>
+        <td><?= e($r['allotted_branch']) ?></td>
+        <td><?= e($r['seat_allotted']) ?></td>
+        <td><?= e($r['admission_through']) ?></td>
+        <td><?= e($r['created_at']) ?></td>
         <td>
           <a class="college-btn"
              href="checklist.php?id=<?= urlencode($r['application_id']) ?>">
