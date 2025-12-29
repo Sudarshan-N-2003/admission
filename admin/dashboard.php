@@ -5,7 +5,7 @@ require_once __DIR__ . '/../db.php';
 $pdo = get_db();
 
 /* ===============================
-   INPUTS (SEARCH + OLD FILTERS)
+   FILTER INPUTS
 ================================ */
 $q        = trim($_GET['q'] ?? '');
 $branch   = $_GET['branch'] ?? '';
@@ -13,7 +13,7 @@ $quota    = $_GET['quota'] ?? '';
 $through  = $_GET['through'] ?? '';
 
 /* ===============================
-   SQL QUERY (USING REAL COLUMNS)
+   BASE QUERY
 ================================ */
 $sql = "
 SELECT
@@ -30,23 +30,25 @@ WHERE 1=1
 
 $params = [];
 
-/* SEARCH BY APPLICATION ID OR MOBILE */
+/* SEARCH */
 if ($q !== '') {
     $sql .= " AND (application_id ILIKE :q OR mobile ILIKE :q)";
     $params[':q'] = "%$q%";
 }
 
-/* OLD FILTERS — KEPT */
+/* BRANCH FILTER */
 if ($branch !== '') {
     $sql .= " AND allotted_branch = :branch";
     $params[':branch'] = $branch;
 }
 
+/* QUOTA FILTER */
 if ($quota !== '') {
     $sql .= " AND seat_allotted = :quota";
     $params[':quota'] = $quota;
 }
 
+/* ADMISSION THROUGH FILTER */
 if ($through !== '') {
     $sql .= " AND admission_through = :through";
     $params[':through'] = $through;
@@ -74,10 +76,11 @@ $rows = $stmt->fetchAll();
     <a href="logout.php" class="college-btn">Logout</a>
   </div>
 
-  <!-- SEARCH + FILTERS -->
+  <!-- FILTER FORM -->
   <form method="get">
 
     <div class="row">
+
       <div class="col">
         <label>Search (Application ID / Mobile)</label>
         <input
@@ -120,10 +123,11 @@ $rows = $stmt->fetchAll();
         <label>Admission Through</label>
         <select name="through">
           <option value="">All</option>
-          <option value="KEA" <?= $through === 'KEA' ? 'selected' : '' ?>>KEA</option>
-          <option value="MANAGEMENT" <?= $through === 'MANAGEMENT' ? 'selected' : '' ?>>MANAGEMENT</option>
+          <option value="KEA" <?= $through==='KEA'?'selected':'' ?>>KEA</option>
+          <option value="MANAGEMENT" <?= $through==='MANAGEMENT'?'selected':'' ?>>MANAGEMENT</option>
         </select>
       </div>
+
     </div>
 
     <div class="actions">
@@ -134,6 +138,7 @@ $rows = $stmt->fetchAll();
 
   <!-- RESULT TABLE -->
   <table class="table" style="margin-top:20px">
+
     <tr>
       <th>Application ID</th>
       <th>Student Name</th>
@@ -172,6 +177,7 @@ $rows = $stmt->fetchAll();
         </td>
       </tr>
     <?php endforeach; ?>
+
   </table>
 
 </div>
