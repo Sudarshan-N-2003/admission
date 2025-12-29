@@ -163,7 +163,8 @@ Thanisandra, Bengaluru, Karnataka – 560077
 <h3>ACKNOWLEDGMENT – STUDENT COPY</h3>
 <p>
 This is to certify that the following documents have been received from
-<b>".e($d['student_name'])."</b> for admission to BE for the academic year
+<b>".e($d['student_name'])."</b> for admission to <b>BE in the Branch
+".e($d['allotted_branch'])."</b> from the academic year
 <b>$admissionYear</b>.
 </p>
 
@@ -184,8 +185,10 @@ This is to certify that the following documents have been received from
 
 <h3>ACKNOWLEDGMENT – COLLEGE COPY</h3>
 <p>
-Documents received from <b>".e($d['student_name'])."</b>
-for BE admission ($admissionYear).
+This is to certify that the following documents have been received from
+<b>".e($d['student_name'])."</b> for admission to <b>BE in the Branch
+".e($d['allotted_branch'])."</b> from the academic year
+<b>$admissionYear</b>.
 </p>
 
 <table>
