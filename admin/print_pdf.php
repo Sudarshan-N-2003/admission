@@ -89,7 +89,7 @@ $html = "
 <meta charset='utf-8'>
 <style>
 body{font-family:Arial;font-size:12px}
-h2,h3{text-align:center;margin:4px 0}
+h1,h2,h3{text-align:center;margin:4px 0}
 table{width:100%;border-collapse:collapse}
 td,th{border:1px solid #000;padding:6px}
 .no-border td{border:none}
