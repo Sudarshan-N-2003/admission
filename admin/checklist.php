@@ -38,14 +38,33 @@ $locked = !empty($d['printed_at']);
 /* ===============================
    DOCUMENT STATUS
 ================================ */
-$status = json_decode($d['document_status'], true) ?? [
-    'marks_10' => '',
-    'marks_12' => '',
-    'study_certificate' => '',
-    'transfer_certificate' => '',
-    'photo' => ''
+$status = json_decode($app['document_status'], true) ?? [];
+
+$requiredDocs = [
+    'marks_10',
+    'marks_12',
+    'study_certificate',
+    'transfer_certificate',
+    'photo'
 ];
 
+$checklistComplete = true;
+
+foreach ($requiredDocs as $doc) {
+    if (($status[$doc] ?? '') !== 'RECEIVED') {
+        $checklistComplete = false;
+        break;
+    }
+}
+/* ===============================
+   FINAL PRINT RULE
+================================ */
+
+// If checklist complete → allow print ALWAYS
+if ($checklistComplete) {
+    header("Location: print_pdf.php?id=" . $applicationId);
+    exit;
+}
 /* ===============================
    SAVE CHECKLIST
 ================================ */
