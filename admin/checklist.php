@@ -31,7 +31,7 @@ if (!$d) {
 }
 
 /* ===============================
-   LOCK STATUS
+   LOCK STATUS (PRINTED)
 ================================ */
 $locked = !empty($d['printed_at']);
 
@@ -60,7 +60,7 @@ foreach ($requiredDocs as $doc) {
 }
 
 /* ===============================
-   SAVE CHECKLIST
+   SAVE CHECKLIST (ONLY IF NOT LOCKED)
 ================================ */
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$locked) {
 
@@ -105,7 +105,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$locked) {
     </div>
   <?php endif; ?>
 
-  <?php if (!$checklistComplete): ?>
+  <?php if (!$checklistComplete && !$locked): ?>
     <div class="flash error">
       Checklist is not completed. Please verify all documents.
     </div>
