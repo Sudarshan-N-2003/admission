@@ -160,6 +160,7 @@ Thanisandra, Bengaluru, Karnataka – 560077
 
 <div class='cut'></div>
 
+<h1>VIJAYA VITTALA INSTITUTE OF TECHNOLOGY</h1>
 <h3>ACKNOWLEDGMENT – STUDENT COPY</h3>
 <p>
 This is to certify that the following documents have been received from
@@ -183,6 +184,7 @@ This is to certify that the following documents have been received from
 
 <div class='page-break'></div>
 
+<h1>VIJAYA VITTALA INSTITUTE OF TECHNOLOGY</h1>
 <h3>ACKNOWLEDGMENT – COLLEGE COPY</h3>
 <p>
 This is to certify that the following documents have been received from
