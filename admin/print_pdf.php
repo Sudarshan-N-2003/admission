@@ -197,6 +197,10 @@ for BE admission ($admissionYear).
 <tr><td>5</td><td>Photograph</td><td>".doc_status($status,'photo')."</td></tr>
 </table>
 
+<table class='no-border signature'>
+<tr><td>Student Signature</td><td class='right'>Admission Director</td></tr>
+</table>
+
 </body>
 </html>
 ";
