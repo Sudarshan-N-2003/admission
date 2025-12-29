@@ -41,7 +41,7 @@ $locked = !empty($d['printed_at']);
 $status = json_decode($d['document_status'], true) ?? [];
 
 /* ===============================
-   CHECKLIST COMPLETION LOGIC
+   REAL CHECKLIST COMPLETION
 ================================ */
 $requiredDocs = [
     'marks_10',
@@ -58,6 +58,12 @@ foreach ($requiredDocs as $doc) {
         break;
     }
 }
+
+/* ===============================
+   EFFECTIVE COMPLETION LOGIC
+   (LOCKED = COMPLETE FOR UI)
+================================ */
+$effectiveComplete = $checklistComplete || $locked;
 
 /* ===============================
    SAVE CHECKLIST (ONLY IF NOT LOCKED)
@@ -105,7 +111,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$locked) {
     </div>
   <?php endif; ?>
 
-  <?php if (!$checklistComplete && !$locked): ?>
+  <?php if (!$effectiveComplete && !$locked): ?>
     <div class="flash error">
       Checklist is not completed. Please verify all documents.
     </div>
@@ -155,7 +161,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$locked) {
         <button type="submit" class="secondary">Save</button>
       <?php endif; ?>
 
-      <?php if ($checklistComplete): ?>
+      <?php if ($effectiveComplete): ?>
         <a href="print_pdf.php?id=<?= urlencode($applicationId) ?>"
            class="btn-primary"
            style="text-decoration:none; padding:10px 18px; border-radius:8px;">
