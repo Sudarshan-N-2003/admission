@@ -6,6 +6,19 @@ require_once __DIR__ . '/../vendor/autoload.php';
 use Dompdf\Dompdf;
 
 /* ===============================
+   STOP WARNINGS BREAKING PDF
+================================ */
+error_reporting(E_ERROR | E_PARSE);
+ini_set('display_errors', 0);
+
+/* ===============================
+   SAFE HTML ESCAPE
+================================ */
+function e($value): string {
+    return htmlspecialchars((string)($value ?? ''), ENT_QUOTES, 'UTF-8');
+}
+
+/* ===============================
    DB CONNECTION
 ================================ */
 $pdo = get_db();
@@ -21,11 +34,7 @@ if ($applicationId === '') {
 /* ===============================
    FETCH APPLICATION
 ================================ */
-$stmt = $pdo->prepare(
-    "SELECT *
-     FROM admissions
-     WHERE application_id = :id"
-);
+$stmt = $pdo->prepare("SELECT * FROM admissions WHERE application_id = :id");
 $stmt->execute([':id' => $applicationId]);
 $d = $stmt->fetch();
 
@@ -34,12 +43,7 @@ if (!$d) {
 }
 
 /* ===============================
-   DOCUMENT STATUS
-================================ */
-$status = json_decode($d['document_status'], true) ?? [];
-
-/* ===============================
-   MARK AS PRINTED (LOCK CHECKLIST)
+   MARK AS PRINTED
 ================================ */
 if (empty($d['printed_at'])) {
     $pdo->prepare(
@@ -48,25 +52,27 @@ if (empty($d['printed_at'])) {
 }
 
 /* ===============================
-   GENERATE QR CODE
+   DOCUMENT STATUS
 ================================ */
-
-
-$qrText = urlencode("VVIT Application ID: " . $applicationId);
-$qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={$qrText}";
-
+$status = json_decode($d['document_status'], true) ?? [];
 
 /* ===============================
-   PREPARE HTML (NO PHP INSIDE STRING)
+   QR CODE (NO GD REQUIRED)
+================================ */
+$qrText = urlencode("VVIT Application ID: " . $applicationId);
+$qrUrl  = "https://api.qrserver.com/v1/create-qr-code/?size=120x120&data={$qrText}";
+
+/* ===============================
+   BUILD HTML (SAFE)
 ================================ */
 $html = '
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
+<meta charset="utf-8">
 <style>
 body { font-family: Arial, sans-serif; font-size: 13px; }
-.header { display:flex; justify-content:space-between; align-items:center; }
+.header { display:flex; justify-content:space-between; }
 .qr img { width:90px; }
 .section { margin-top:10px; }
 table { width:100%; border-collapse:collapse; margin-top:10px; }
@@ -79,37 +85,40 @@ th { background:#f3f4f6; }
 
 <div class="header">
   <div>
-    <b>Application ID:</b> ' . htmlspecialchars($applicationId) . '<br>
-    <b>Student Name:</b> ' . htmlspecialchars($d['student_name']) . '
+    <b>Application ID:</b> '.e($applicationId).'<br>
+    <b>Student Name:</b> '.e($d['student_name']).'
   </div>
   <div class="qr">
-    <img src="' . $qrUrl . '" width="90">
+    <img src="'.$qrUrl.'">
   </div>
 </div>
 
 <div class="section">
-  <b>Gender:</b> ' . htmlspecialchars($d['gender']) . '<br>
-  <b>DOB:</b> ' . htmlspecialchars($d['dob']) . '<br>
-  <b>Mobile:</b> ' . htmlspecialchars($d['mobile']) . '<br>
-  <b>Guardian Mobile:</b> ' . htmlspecialchars($d['guardian_mobile']) . '<br>
-  <b>State:</b> ' . htmlspecialchars($d['state']) . '<br>
-  <b>Category:</b> ' . htmlspecialchars($d['category']) . '
+  <b>Gender:</b> '.e($d['gender']).'<br>
+  <b>DOB:</b> '.e($d['dob']).'<br>
+  <b>Mobile:</b> '.e($d['mobile']).'<br>
+  <b>Guardian Mobile:</b> '.e($d['guardian_mobile']).'<br>
+  <b>Email:</b> '.e($d['email']).'<br>
+  <b>State:</b> '.e($d['state']).'<br>
+  <b>Category:</b> '.e($d['category']).'<br>
+  <b>Sub Caste:</b> '.e($d['sub_caste']).'
 </div>
 
 <div class="section">
-  <b>Admission Through:</b> ' . htmlspecialchars($d['admission_through']) . '<br>
-  <b>Branch:</b> ' . htmlspecialchars($d['allotted_branch']) . '
+  <b>Admission Through:</b> '.e($d['admission_through']).'<br>
+  <b>Allotted Branch:</b> '.e($d['allotted_branch']).'<br>
+  <b>Quota:</b> '.e($d['seat_allotted']).'
 </div>
 
 <div class="section">
   <h4>Document Checklist</h4>
   <table>
     <tr><th>Sl</th><th>Document</th><th>Status</th></tr>
-    <tr><td>1</td><td>10th Marks Card</td><td>' . ($status['marks_10'] ?? '') . '</td></tr>
-    <tr><td>2</td><td>12th / Diploma Marks Card</td><td>' . ($status['marks_12'] ?? '') . '</td></tr>
-    <tr><td>3</td><td>Study Certificate</td><td>' . ($status['study_certificate'] ?? '') . '</td></tr>
-    <tr><td>4</td><td>Transfer Certificate</td><td>' . ($status['transfer_certificate'] ?? '') . '</td></tr>
-    <tr><td>5</td><td>Photograph</td><td>' . ($status['photo'] ?? '') . '</td></tr>
+    <tr><td>1</td><td>10th Marks Card</td><td>'.e($status['marks_10'] ?? '').'</td></tr>
+    <tr><td>2</td><td>12th / Diploma Marks Card</td><td>'.e($status['marks_12'] ?? '').'</td></tr>
+    <tr><td>3</td><td>Study Certificate</td><td>'.e($status['study_certificate'] ?? '').'</td></tr>
+    <tr><td>4</td><td>Transfer Certificate</td><td>'.e($status['transfer_certificate'] ?? '').'</td></tr>
+    <tr><td>5</td><td>Photograph</td><td>'.e($status['photo'] ?? '').'</td></tr>
   </table>
 </div>
 
@@ -128,5 +137,8 @@ $dompdf = new Dompdf();
 $dompdf->setPaper('A4', 'portrait');
 $dompdf->loadHtml($html);
 $dompdf->render();
-$dompdf->stream('Application_' . $applicationId . '.pdf', ['Attachment' => true]);
+$dompdf->stream(
+    'Application_'.$applicationId.'.pdf',
+    ['Attachment' => true]
+);
 exit;
