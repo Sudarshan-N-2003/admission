@@ -65,65 +65,137 @@ $qrUrl  = "https://api.qrserver.com/v1/create-qr-code/?size=120x120&data={$qrTex
 /* ===============================
    BUILD HTML (SAFE)
 ================================ */
+$admissionYear = '2025-26'; // or calculate dynamically
+
 $html = '
 <!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8">
 <style>
-body { font-family: Arial, sans-serif; font-size: 13px; }
-.header { display:flex; justify-content:space-between; }
-.qr img { width:90px; }
-.section { margin-top:10px; }
-table { width:100%; border-collapse:collapse; margin-top:10px; }
-th, td { border:1px solid #000; padding:6px; }
-th { background:#f3f4f6; }
-.center { text-align:center; }
+body {
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+}
+.page {
+  width: 100%;
+}
+.top {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.photo {
+  width: 120px;
+  height: 140px;
+  border: 1px solid #000;
+}
+.idbox {
+  font-weight: bold;
+  font-size: 14px;
+}
+.main {
+  display: flex;
+}
+.left {
+  width: 60%;
+  padding-right: 8px;
+}
+.right {
+  width: 40%;
+  padding-left: 8px;
+  border-left: 2px solid #000;
+}
+h3 {
+  margin: 6px 0;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 6px;
+}
+td, th {
+  border: 1px solid #000;
+  padding: 5px;
+}
+.center {
+  text-align: center;
+}
+.college-name {
+  font-family: "Times New Roman", serif;
+  font-size: 16px;
+  font-weight: bold;
+  text-align: center;
+}
 </style>
 </head>
 <body>
 
-<div class="header">
-  <div>
-    <b>Application ID:</b> '.e($applicationId).'<br>
-    <b>Student Name:</b> '.e($d['student_name']).'
+<div class="page">
+
+  <!-- TOP ROW -->
+  <div class="top">
+    <div>
+      <img src="' . $qrUrl . '" class="photo">
+    </div>
+    <div class="idbox">
+      Application ID:<br>' . e($applicationId) . '
+    </div>
   </div>
-  <div class="qr">
-    <img src="'.$qrUrl.'">
+
+  <div class="main">
+
+    <!-- LEFT SIDE : STUDENT COPY -->
+    <div class="left">
+      <h3>Student Details</h3>
+
+      <p><b>Name:</b> ' . e($d['student_name']) . '</p>
+      <p><b>DOB:</b> ' . e($d['dob']) . '</p>
+      <p><b>Gender:</b> ' . e($d['gender']) . '</p>
+      <p><b>Mobile:</b> ' . e($d['mobile']) . '</p>
+      <p><b>Guardian Mobile:</b> ' . e($d['guardian_mobile']) . '</p>
+      <p><b>Address:</b> ' . e($d['permanent_address']) . '</p>
+
+      <h3>Admission Details</h3>
+      <p><b>Admission Through:</b> ' . e($d['admission_through']) . '</p>
+      <p><b>Branch:</b> ' . e($d['allotted_branch']) . '</p>
+      <p><b>Quota:</b> ' . e($d['seat_allotted']) . '</p>
+
+      <h3>Submitted Documents</h3>
+      <table>
+        <tr><th>Sl</th><th>Document</th><th>Status</th></tr>
+        <tr><td>1</td><td>10th Marks Card</td><td>' . e($status['marks_10'] ?? '') . '</td></tr>
+        <tr><td>2</td><td>12th / Diploma Marks Card</td><td>' . e($status['marks_12'] ?? '') . '</td></tr>
+        <tr><td>3</td><td>Study Certificate</td><td>' . e($status['study_certificate'] ?? '') . '</td></tr>
+        <tr><td>4</td><td>Transfer Certificate</td><td>' . e($status['transfer_certificate'] ?? '') . '</td></tr>
+        <tr><td>5</td><td>Photo</td><td>' . e($status['photo'] ?? '') . '</td></tr>
+      </table>
+    </div>
+
+    <!-- RIGHT SIDE : COLLEGE COPY -->
+    <div class="right">
+      <div class="college-name">
+        Vijay Vittal Institute of Technology
+      </div>
+
+      <p class="center">
+        <b>' . e($d['student_name']) . '</b><br>
+        Branch: ' . e($d['allotted_branch']) . '<br>
+        Admission Year: ' . $admissionYear . '
+      </p>
+
+      <table>
+        <tr><th>Sl</th><th>Document</th><th>Received Date</th></tr>
+        <tr><td>1</td><td>10th Marks Card</td><td></td></tr>
+        <tr><td>2</td><td>12th / Diploma Marks Card</td><td></td></tr>
+        <tr><td>3</td><td>Study Certificate</td><td></td></tr>
+        <tr><td>4</td><td>Transfer Certificate</td><td></td></tr>
+        <tr><td>5</td><td>Photo</td><td></td></tr>
+      </table>
+    </div>
+
   </div>
-</div>
 
-<div class="section">
-  <b>Gender:</b> '.e($d['gender']).'<br>
-  <b>DOB:</b> '.e($d['dob']).'<br>
-  <b>Mobile:</b> '.e($d['mobile']).'<br>
-  <b>Guardian Mobile:</b> '.e($d['guardian_mobile']).'<br>
-  <b>Email:</b> '.e($d['email']).'<br>
-  <b>State:</b> '.e($d['state']).'<br>
-  <b>Category:</b> '.e($d['category']).'<br>
-  <b>Sub Caste:</b> '.e($d['sub_caste']).'
-</div>
-
-<div class="section">
-  <b>Admission Through:</b> '.e($d['admission_through']).'<br>
-  <b>Allotted Branch:</b> '.e($d['allotted_branch']).'<br>
-  <b>Quota:</b> '.e($d['seat_allotted']).'
-</div>
-
-<div class="section">
-  <h4>Document Checklist</h4>
-  <table>
-    <tr><th>Sl</th><th>Document</th><th>Status</th></tr>
-    <tr><td>1</td><td>10th Marks Card</td><td>'.e($status['marks_10'] ?? '').'</td></tr>
-    <tr><td>2</td><td>12th / Diploma Marks Card</td><td>'.e($status['marks_12'] ?? '').'</td></tr>
-    <tr><td>3</td><td>Study Certificate</td><td>'.e($status['study_certificate'] ?? '').'</td></tr>
-    <tr><td>4</td><td>Transfer Certificate</td><td>'.e($status['transfer_certificate'] ?? '').'</td></tr>
-    <tr><td>5</td><td>Photograph</td><td>'.e($status['photo'] ?? '').'</td></tr>
-  </table>
-</div>
-
-<div class="section center">
-  <h3>Vijay Vittal Institute of Technology</h3>
 </div>
 
 </body>
