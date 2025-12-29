@@ -124,11 +124,29 @@ Thanisandra, Bengaluru, Karnataka – 560077
 
 <table class='no-border'>
 <tr>
-<td><b>APPLICATION NO:</b> ".e($id)."</td>
-<td class='right'><b>DATE & TIME:</b> ".e($d['created_at'])."</td>
-<td class='right'>$photoHtml</td>
+  <!-- QR CODE -->
+  <td style="width:120px; text-align:left;">
+    <div style="text-align:center">
+      $qrSvg
+      <div style="font-size:10px;margin-top:4px;">
+        Scan to Verify
+      </div>
+    </div>
+  </td>
+
+  <!-- APPLICATION DETAILS -->
+  <td style="vertical-align:top;">
+    <b>APPLICATION NO:</b> ".e($id)."<br>
+    <b>DATE & TIME:</b> ".e($d['created_at'])."
+  </td>
+
+  <!-- PHOTO -->
+  <td style="width:120px; text-align:right;">
+    $photo
+  </td>
 </tr>
 </table>
+
 
 <table>
 <tr><td colspan='4' class='section'>PERSONAL INFORMATION</td></tr>
