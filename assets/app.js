@@ -220,3 +220,41 @@ window.addEventListener("DOMContentLoaded", () => {
   });
 });
 
+
+
+
+
+
+
+function checkDuplicate() {
+  const mobile = document.querySelector('[name="mobile"]')?.value;
+  const email  = document.querySelector('[name="email"]')?.value;
+  const msg    = document.getElementById("dupMessage");
+
+  if (!mobile && !email) return;
+
+  const formData = new FormData();
+  formData.append("mobile", mobile);
+  formData.append("email", email);
+
+  fetch("check_duplicate.php", {
+    method: "POST",
+    body: formData
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.status === "exists") {
+      msg.textContent = data.message;
+      msg.style.color = "#dc2626";
+    } else {
+      msg.textContent = "✓ Available";
+      msg.style.color = "#16a34a";
+    }
+  });
+}
+
+document.querySelector('[name="mobile"]')
+  ?.addEventListener("blur", checkDuplicate);
+
+document.querySelector('[name="email"]')
+  ?.addEventListener("blur", checkDuplicate);
