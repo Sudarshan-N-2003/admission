@@ -287,5 +287,26 @@
 </div>
 
 <script src="assets/app.js"></script>
+
+
+
+<!-- Preview Modal -->
+<div id="previewModal" class="modal hidden">
+  <div class="modal-content">
+    <h3>Confirm Your Details</h3>
+    <div id="previewContent"></div>
+
+    <div class="actions">
+      <button type="button" class="btn-grey" onclick="closePreview()">Edit</button>
+      <button type="submit" class="btn-primary">Confirm & Submit</button>
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
 </body>
 </html>
