@@ -40,6 +40,24 @@
     <option value="FEMALE">Female</option>
   </select>
 
+
+<div class="col">
+    <label>Religion</label>
+    <select name="religion" required>
+      <option value="">-- Select Religion --</option>
+      <option value="HINDU">HINDU</option>
+      <option value="MUSLIM">MUSLIM</option>
+      <option value="CHRISTIAN">CHRISTIAN</option>
+      <option value="JAIN">JAIN</option>
+      <option value="BUDDHIST">BUDDHIST</option>
+      <option value="SIKH">SIKH</option>
+      <option value="OTHER">OTHER</option>
+    </select>
+  </div>
+</div>
+
+
+  
 <label>Category</label>
 <select name="category" required>
   <option value="">Select Category</option>
@@ -86,6 +104,21 @@
   <option>DIPLOMA (LATERAL ENTRY)</option>
 </select>
 
+
+<div class="row">
+  <div class="col">
+    <label>Nationality</label>
+    <select name="nationality" required>
+      <option value="INDIAN">INDIAN</option>
+      <option value="NEPAL">NEPAL</option>
+      <option value="BANGLADESH">BANGLADESH</option>
+      <option value="SRI LANKA">SRI LANKA</option>
+      <option value="BHUTAN">BHUTAN</option>
+      <option value="MYANMAR">MYANMAR</option>
+      <option value="OTHER">OTHER</option>
+    </select>
+  </div>
+  
 <label>State</label>
 <select name="state" required>
   <option value="KARNATAKA" selected>Karnataka</option>
