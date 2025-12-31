@@ -282,6 +282,26 @@ let emailVerified = false;
 
 document.getElementById("sendOtpBtn")?.addEventListener("click", () => {
   const email = document.querySelector('[name="email"]').value;
+  const msg = document.getElementById("otpMsg");
+
+  if (!email) {
+    msg.textContent = "Enter email first";
+    msg.style.color = "red";
+    return;
+  }
+
+  fetch("send_otp.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ email })
+  })
+  .then(r => r.json())
+  .then(() => {
+    document.getElementById("otpBox").classList.remove("hidden");
+    msg.textContent = "OTP sent to email";
+    msg.style.color = "
+
+  const email = document.querySelector('[name="email"]').value;
   if (!email) return alert("Enter email first");
 
   fetch("send_otp.php", {
