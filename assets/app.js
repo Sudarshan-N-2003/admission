@@ -153,3 +153,39 @@ function enableSubmitIfValid() {
 document.addEventListener("change", enableSubmitIfValid);
 document.addEventListener("keyup", enableSubmitIfValid);
 
+
+
+
+
+
+
+
+
+
+
+
+function openPreview() {
+  const modal = document.getElementById("previewModal");
+  const content = document.getElementById("previewContent");
+
+  let html = "";
+  document.querySelectorAll("input, select, textarea").forEach(el => {
+    if (el.name && el.type !== "file" && el.value) {
+      html += `<p><b>${el.name.replaceAll('_',' ')}:</b> ${el.value}</p>`;
+    }
+  });
+
+  content.innerHTML = html;
+  modal.classList.remove("hidden");
+}
+
+function closePreview() {
+  document.getElementById("previewModal").classList.add("hidden");
+}
+
+/* Replace normal submit */
+document.getElementById("submitBtn")?.addEventListener("click", function (e) {
+  e.preventDefault();
+  openPreview();
+});
+
