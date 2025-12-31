@@ -73,7 +73,7 @@
 
 <label>Sub Caste</label>
 <input type="text"
-       name="sub_caste"
+       name="sub_caste" required
        placeholder="Eg: Lingayat, Reddy"
        oninput="this.value=this.value.toUpperCase()">
 
