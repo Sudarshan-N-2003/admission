@@ -8,28 +8,32 @@ try {
     /* ---------------------------------
        1. REQUIRED FIELD VALIDATION
     ----------------------------------*/
-    $required = [
-        'student_name',
-        'dob',
-        'gender',
-        'father_name',
-        'mother_name',
-        'mobile',
-        'guardian_mobile',
-        'email',
-        'state',
-        'prev_combination',
-        'prev_college',
-        'permanent_address',
-        'category',
-        'admission_through'
-    ];
+$required = [
+  'student_name',
+  'dob',
+  'gender',
+  'father_name',
+  'mother_name',
+  'mobile',
+  'guardian_mobile',
+  'email',
+  'state',
+  'permanent_address',
+  'nationality',
+  'religion',
+  'prev_college',
+  'prev_combination',
+  'category',
+  'sub_caste',
+  'admission_through'
+];
 
-    foreach ($required as $field) {
-        if (empty($_POST[$field])) {
-            throw new Exception("Missing required field: $field");
-        }
-    }
+foreach ($required as $f) {
+  if (empty(trim($_POST[$f] ?? ''))) {
+    throw new Exception("Missing required field: $f");
+  }
+}
+
 
     /* ---------------------------------
        2. NORMALIZE INPUT (UPPERCASE)
