@@ -303,15 +303,31 @@ function verifyOtp() {
     method: "POST",
     body: new URLSearchParams({ email, otp })
   })
-  .then(r=>r.json())
+  .then(r => r.json())
   .then(res => {
+    const msg = document.getElementById("otpMsg");
+
     if (res.status === "ok") {
-      emailVerified = true;
-      document.getElementById("otpMsg").textContent = "Email verified ✓";
-      document.getElementById("otpMsg").style.color = "green";
+
+      // ✅ MARK EMAIL AS VERIFIED
+      let hidden = document.querySelector('input[name="email_verified"]');
+      if (!hidden) {
+        document.querySelector('form').insertAdjacentHTML(
+          'beforeend',
+          '<input type="hidden" name="email_verified" value="1">'
+        );
+      }
+
+      msg.textContent = "Email verified ✓";
+      msg.style.color = "green";
+
+      // Optional UX improvements
+      document.getElementById("otpBox").classList.add("hidden");
+      document.getElementById("sendOtpBtn").disabled = true;
+
     } else {
-      document.getElementById("otpMsg").textContent = res.msg;
-      document.getElementById("otpMsg").style.color = "red";
+      msg.textContent = res.msg || "Invalid OTP";
+      msg.style.color = "red";
     }
   });
 }
