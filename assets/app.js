@@ -189,3 +189,34 @@ document.getElementById("submitBtn")?.addEventListener("click", function (e) {
   openPreview();
 });
 
+
+
+
+
+const FORM_KEY = "vvit_admission_draft";
+
+/* Save */
+document.querySelectorAll("input, select, textarea").forEach(el => {
+  el.addEventListener("change", () => {
+    const data = {};
+    document.querySelectorAll("input, select, textarea").forEach(f => {
+      if (f.name && f.type !== "file") {
+        data[f.name] = f.value;
+      }
+    });
+    localStorage.setItem(FORM_KEY, JSON.stringify(data));
+  });
+});
+
+/* Restore */
+window.addEventListener("DOMContentLoaded", () => {
+  const saved = localStorage.getItem(FORM_KEY);
+  if (!saved) return;
+
+  const data = JSON.parse(saved);
+  Object.keys(data).forEach(k => {
+    const el = document.querySelector(`[name="${k}"]`);
+    if (el) el.value = data[k];
+  });
+});
+
