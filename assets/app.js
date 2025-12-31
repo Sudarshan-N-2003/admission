@@ -258,3 +258,60 @@ document.querySelector('[name="mobile"]')
 
 document.querySelector('[name="email"]')
   ?.addEventListener("blur", checkDuplicate);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+let emailVerified = false;
+
+document.getElementById("sendOtpBtn")?.addEventListener("click", () => {
+  const email = document.querySelector('[name="email"]').value;
+  if (!email) return alert("Enter email first");
+
+  fetch("send_otp.php", {
+    method: "POST",
+    body: new URLSearchParams({ email })
+  })
+  .then(r=>r.json())
+  .then(() => {
+    document.getElementById("otpBox").classList.remove("hidden");
+    document.getElementById("otpMsg").textContent = "OTP sent to email";
+  });
+});
+
+function verifyOtp() {
+  const email = document.querySelector('[name="email"]').value;
+  const otp = document.getElementById("otpInput").value;
+
+  fetch("verify_otp.php", {
+    method: "POST",
+    body: new URLSearchParams({ email, otp })
+  })
+  .then(r=>r.json())
+  .then(res => {
+    if (res.status === "ok") {
+      emailVerified = true;
+      document.getElementById("otpMsg").textContent = "Email verified ✓";
+      document.getElementById("otpMsg").style.color = "green";
+    } else {
+      document.getElementById("otpMsg").textContent = res.msg;
+      document.getElementById("otpMsg").style.color = "red";
+    }
+  });
+}
