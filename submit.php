@@ -1,6 +1,16 @@
 <?php
 session_start();
 
+
+if (empty($_POST['email_verified'])) {
+  throw new Exception("Please verify email before submitting.");
+}
+
+
+
+
+
+
 require_once __DIR__ . '/functions.php';
 require_once __DIR__ . '/vendor/autoload.php';
 
