@@ -13,6 +13,16 @@
 <body>
 
 <div class="container">
+<!-- Progress Bar -->
+<div class="progress-wrap">
+  <div class="progress">
+    <div class="progress-bar" id="progressBar"></div>
+  </div>
+  <div class="progress-steps">
+    <span class="step-label active" id="labelStep1">Step 1: Details</span>
+    <span class="step-label" id="labelStep2">Step 2: Uploads</span>
+  </div>
+</div>
 
 <h2>College Admission Form</h2>
 
