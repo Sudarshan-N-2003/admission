@@ -60,6 +60,38 @@ try {
     $data['seat_allotted']   = 'MANAGEMENT';
   }
 
+
+
+/* ---------------------------------
+   3.5 DUPLICATE ENTRY CHECK
+----------------------------------*/
+require_once __DIR__ . '/db.php';
+$pdo = get_db();
+
+$check = $pdo->prepare("
+  SELECT 1
+  FROM admissions
+  WHERE mobile = :mobile
+     OR email  = :email
+  LIMIT 1
+");
+
+$check->execute([
+  ':mobile' => $data['mobile'],
+  ':email'  => $data['email']
+]);
+
+if ($check->fetch()) {
+  throw new Exception(
+    "Duplicate entry detected. This mobile number or email is already registered."
+  );
+}
+
+
+
+
+  
+
   /* ==================================================
      4. GENERATE APPLICATION ID
   ================================================== */
