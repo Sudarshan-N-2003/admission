@@ -321,6 +321,31 @@ function verifyOtp() {
       msg.textContent = "Email verified ✓";
       msg.style.color = "green";
 
+       let otpCooldown = 60;
+let otpInterval = null;
+
+function startOtpTimer() {
+  const btn = document.getElementById("sendOtpBtn");
+  const timer = document.getElementById("otpTimer");
+
+  btn.disabled = true;
+  otpCooldown = 60;
+
+  timer.textContent = `Resend OTP in ${otpCooldown}s`;
+
+  otpInterval = setInterval(() => {
+    otpCooldown--;
+    timer.textContent = `Resend OTP in ${otpCooldown}s`;
+
+    if (otpCooldown <= 0) {
+      clearInterval(otpInterval);
+      timer.textContent = "";
+      btn.disabled = false;
+    }
+  }, 1000);
+}
+
+
       // Optional UX improvements
       document.getElementById("otpBox").classList.add("hidden");
       document.getElementById("sendOtpBtn").disabled = true;
