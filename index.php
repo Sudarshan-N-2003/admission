@@ -277,8 +277,10 @@
            accept="application/pdf">
   </div>
 
-  <button type="button" class="secondary" onclick="prevStep()">Back</button>
-  <button type="submit">Submit</button>
+  <button type="submit" id="submitBtn" disabled class="btn-primary">
+  Submit Application
+</button>
+
 </div>
 
 </form>
