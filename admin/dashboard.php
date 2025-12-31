@@ -72,7 +72,7 @@ $rows = $stmt->fetchAll();
 <head>
 <meta charset="utf-8">
 <title>College Dashboard</title>
-<link rel="stylesheet" href="../assets/styles.css">
+<link rel="stylesheet" href="../assets/admin.css">
 </head>
 <body>
 
