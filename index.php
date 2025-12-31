@@ -95,9 +95,13 @@
 
 <label>Email</label>
 <input type="email" name="email" required placeholder="Email">
+  <small id="dupMessage" class="muted"></small>
+
 
   <label>Mobile Number</label>
   <input type="text" name="mobile" pattern="\d{10}" required>
+  <small id="dupMessage" class="muted"></small>
+
 
   <label>Guardian Mobile Number</label>
   <input type="text" name="guardian_mobile" pattern="\d{10}" required>
