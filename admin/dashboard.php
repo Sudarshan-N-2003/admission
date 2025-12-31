@@ -80,6 +80,8 @@ $rows = $stmt->fetchAll();
 
   <div class="topbar">
     <h2>College Dashboard</h2>
+<a href="export.php" class="college-btn">Export Excel</a>
+  </div>
     <a href="logout.php" class="college-btn">Logout</a>
   </div>
 
