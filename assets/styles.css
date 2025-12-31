@@ -351,3 +351,37 @@ select option {
   color: var(--primary);
   font-weight: 600;
 }
+
+
+
+
+
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.modal-content {
+  background: #fff;
+  padding: 20px;
+  width: 95%;
+  max-width: 520px;
+  border-radius: 10px;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.modal.hidden {
+  display: none;
+}
+
+#previewContent p {
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+
