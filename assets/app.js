@@ -127,3 +127,29 @@ document.addEventListener("DOMContentLoaded", function () {
     showAdmissionFields(); // run once on load
   }
 });
+
+
+function enableSubmitIfValid() {
+  const step2 = document.getElementById("step2");
+  const submitBtn = document.getElementById("submitBtn");
+  if (!step2 || !submitBtn) return;
+
+  const requiredFields = step2.querySelectorAll("[required]");
+  let valid = true;
+
+  requiredFields.forEach(field => {
+    if (
+      (field.type === "file" && field.files.length === 0) ||
+      (!field.value || field.value.trim() === "")
+    ) {
+      valid = false;
+    }
+  });
+
+  submitBtn.disabled = !valid;
+}
+
+/* Listen to changes in step 2 */
+document.addEventListener("change", enableSubmitIfValid);
+document.addEventListener("keyup", enableSubmitIfValid);
+
