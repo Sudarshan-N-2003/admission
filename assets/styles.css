@@ -385,3 +385,13 @@ select option {
   margin-bottom: 6px;
 }
 
+/* ===============================
+   STEP VISIBILITY (FINAL FIX)
+================================ */
+.step {
+  display: none !important;
+}
+
+.step.active {
+  display: block !important;
+}
