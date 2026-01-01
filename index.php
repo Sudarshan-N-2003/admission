@@ -115,14 +115,6 @@
   <small id="dupMessage" class="muted"></small>
 
 
-<div id="otpBox" class="hidden">
-  <input type="text" id="otpInput" placeholder="Enter OTP">
-  <button type="button" onclick="verifyOtp()">Confirm OTP</button>
-</div>
-
-<small id="otpMsg"></small>
-
-
   <label>Guardian Mobile Number</label>
   <input type="text" name="guardian_mobile" pattern="\d{10}" required>
 
