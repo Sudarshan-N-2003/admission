@@ -35,7 +35,7 @@
 <form method="post" action="submit.php" enctype="multipart/form-data">
 
 <!-- ================= STEP 1 ================= -->
-<div class="step active" id="step1">
+<div id="step1" class="step active">
 
   <label>Student Name</label>
   <input type="text" name="student_name" required oninput="this.value=this.value.toUpperCase()">
@@ -263,7 +263,7 @@
 </div>
 
 <!-- ================= STEP 2 ================= -->
-<div class="step" id="step2">
+<div id="step2" class="step">
 
  <label>Passport Size Photo *</label>
     <input type="file" name="passport_photo" accept=".jpg,.jpeg,.png" required>
