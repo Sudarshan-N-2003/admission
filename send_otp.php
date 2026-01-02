@@ -29,6 +29,8 @@ $pdo->prepare("
 
 $mail = new PHPMailer(true);
 $mail->isSMTP();
+$mail->SMTPDebug = 2;
+$mail->Debugoutput = 'error_log';
 $mail->Host = getenv('SMTP_HOST');
 $mail->SMTPAuth = true;
 $mail->Username = getenv('SMTP_USER');
