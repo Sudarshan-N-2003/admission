@@ -395,3 +395,41 @@ select option {
 .step.active {
   display: block !important;
 }
+
+
+
+
+
+
+/* =====================================
+   HARD FORCE STEP VISIBILITY (FINAL)
+===================================== */
+
+/* Steps */
+.step {
+  display: none !important;
+}
+
+.step.active {
+  display: block !important;
+}
+
+/* Conditional sections */
+.hidden {
+  display: none !important;
+}
+
+/* Safety: prevent accidental flex showing */
+#kea_section,
+#management_section,
+#kea_doc,
+#management_doc {
+  display: none;
+}
+
+#kea_section:not(.hidden),
+#management_section:not(.hidden),
+#kea_doc:not(.hidden),
+#management_doc:not(.hidden) {
+  display: block !important;
+}
