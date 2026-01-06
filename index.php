@@ -95,19 +95,8 @@
 
 <label>Email</label>
 <input type="email" name="email" required placeholder="Email">
-  <small id="dupMessage" class="muted"></small>
-<button type="button" id="sendOtpBtn" class="secondary">
-  Verify Email
-</button>
 
-<small id="otpTimer" class="muted"></small>
 
-<div id="otpBox" class="hidden">
-  <input type="text" id="otpInput" placeholder="Enter OTP">
-  <button type="button" onclick="verifyOtp()">Confirm OTP</button>
-</div>
-
-<small id="otpMsg"></small>
 
 
   <label>Mobile Number</label>
