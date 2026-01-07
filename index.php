@@ -6,6 +6,52 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>College Admission</title>
 <link rel="stylesheet" href="assets/styles.css">
+  <style>
+    .admin-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+
+    background: #1e40af; /* Dark blue */
+    color: #ffffff;
+    text-decoration: none;
+
+    padding: 10px 18px;
+    border-radius: 6px;
+
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s ease;
+    z-index: 9999;
+}
+
+/* Hover effect */
+.admin-btn:hover {
+    background: #1d4ed8;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
+}
+
+/* Active click */
+.admin-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Mobile friendly */
+@media (max-width: 600px) {
+    .admin-btn {
+        top: 12px;
+        right: 12px;
+        padding: 8px 14px;
+        font-size: 13px;
+    }
+}
+
+  </style>
 </head>
 
 <body>
