@@ -56,9 +56,6 @@
 
 <body>
 
-<a href="/admin/login.php" class="admin-btn" style="float:right">
-  College Login
-</a>
 
 <div class="container">
 
@@ -72,7 +69,9 @@
     <span class="step-label" id="labelStep2">Step 2: Uploads</span>
   </div>
 </div>
-
+<a href="/admin/login.php" class="admin-btn" style="float:right">
+  College Login
+</a>
 <h2>College Admission Form</h2>
 
 <?php if (!empty($_SESSION['flash'])): ?>
