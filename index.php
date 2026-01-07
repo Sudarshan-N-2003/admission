@@ -16,7 +16,7 @@
     color: #ffffff;
     text-decoration: none;
 
-    padding: 10px 18px;
+    padding: 6px 6px;
     border-radius: 6px;
 
     font-size: 8px;
