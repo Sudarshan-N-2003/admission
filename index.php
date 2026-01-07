@@ -292,7 +292,9 @@
 </div>
 
 <script src="assets/app.js"></script>
-  echo "<script>localStorage.removeItem('vvit_admission_draft');</script>";
+<script>
+  localStorage.removeItem('vvit_admission_draft');
+</script>
 
 
 
