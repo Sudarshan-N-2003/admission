@@ -120,8 +120,6 @@
 </select>
 
 
-<div class="row">
-  <div class="col">
     <label>Nationality</label>
     <select name="nationality" required>
       <option value="INDIAN">INDIAN</option>
