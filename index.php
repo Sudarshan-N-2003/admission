@@ -19,8 +19,8 @@
     padding: 10px 18px;
     border-radius: 6px;
 
-    font-size: 14px;
-    font-weight: 600;
+    font-size: 8px;
+    font-weight: 400;
     letter-spacing: 0.5px;
 
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
