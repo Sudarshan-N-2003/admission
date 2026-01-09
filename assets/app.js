@@ -1,63 +1,44 @@
-/* =====================================================
-   FORCE INITIAL STATE (IMPORTANT)
-===================================================== */
-document.addEventListener("DOMContentLoaded", () => {
-  hideAllAdmissionSections();
-});
+/* ================= VALIDATION ================= */
+function validateVisibleFields(containerId) {
+  const container = document.getElementById(containerId);
+  if (!container) return true;
 
-/* =====================================================
-   HIDE ALL KEA / MANAGEMENT FIELDS
-===================================================== */
-function hideAllAdmissionSections() {
-  const keaSection = document.getElementById("kea_section");
-  const mgmtSection = document.getElementById("management_section");
-  const keaDoc = document.getElementById("kea_doc");
-  const mgmtDoc = document.getElementById("management_doc");
+  let firstInvalid = null;
+  let valid = true;
 
-  keaSection?.classList.add("hidden");
-  mgmtSection?.classList.add("hidden");
-  keaDoc?.classList.add("hidden");
-  mgmtDoc?.classList.add("hidden");
+  container.querySelectorAll("[required]").forEach(field => {
+    field.classList.remove("input-error");
 
-  const keaInput = document.getElementById("kea_acknowledgement");
-  const mgmtInput = document.getElementById("management_receipt");
+    if (field.closest(".hidden")) return;
 
-  if (keaInput) keaInput.required = false;
-  if (mgmtInput) mgmtInput.required = false;
-}
+    const empty =
+      (field.type === "file" && field.files.length === 0) ||
+      (!field.value || field.value.trim() === "");
 
-/* =====================================================
-   SHOW BASED ON ADMISSION TYPE
-===================================================== */
-function showAdmissionFields() {
-  hideAllAdmissionSections();
+    if (empty) {
+      valid = false;
+      field.classList.add("input-error");
+      if (!firstInvalid) firstInvalid = field;
+    }
+  });
 
-  const type = document.getElementById("admission_through")?.value;
-  if (!type) return;
-
-  if (type === "KEA") {
-    document.getElementById("kea_section")?.classList.remove("hidden");
-    document.getElementById("kea_doc")?.classList.remove("hidden");
-    document.getElementById("kea_acknowledgement").required = true;
+  if (firstInvalid) {
+    firstInvalid.scrollIntoView({ behavior: "smooth", block: "center" });
+    firstInvalid.focus();
   }
 
-  if (type === "MANAGEMENT") {
-    document.getElementById("management_section")?.classList.remove("hidden");
-    document.getElementById("management_doc")?.classList.remove("hidden");
-    document.getElementById("management_receipt").required = true;
-  }
+  return valid;
 }
 
-/* =====================================================
-   STEP NAVIGATION
-===================================================== */
+/* ================= STEP NAVIGATION ================= */
 function nextStep() {
-  if (!validateStep("step1")) return;
+  if (!validateVisibleFields("step1")) return;
 
   document.getElementById("step1").classList.remove("active");
   document.getElementById("step2").classList.add("active");
 
   updateProgress(2);
+  showAdmissionFields();
 }
 
 function prevStep() {
@@ -67,58 +48,67 @@ function prevStep() {
   updateProgress(1);
 }
 
-/* =====================================================
-   STEP VALIDATION + AUTO SCROLL
-===================================================== */
-function validateStep(stepId) {
-  const step = document.getElementById(stepId);
-  const required = step.querySelectorAll("[required]");
-  let firstError = null;
-
-  required.forEach(el => {
-    el.classList.remove("input-error");
-
-    if (
-      (el.type === "file" && el.files.length === 0) ||
-      (!el.value || el.value.trim() === "")
-    ) {
-      el.classList.add("input-error");
-      if (!firstError) firstError = el;
-    }
-  });
-
-  if (firstError) {
-    firstError.scrollIntoView({ behavior: "smooth", block: "center" });
-    firstError.focus();
-    return false;
-  }
-  return true;
-}
-
-/* =====================================================
-   PROGRESS BAR
-===================================================== */
+/* ================= PROGRESS BAR ================= */
 function updateProgress(step) {
   const bar = document.getElementById("progressBar");
-  const s1 = document.getElementById("labelStep1");
-  const s2 = document.getElementById("labelStep2");
+  if (!bar) return;
+  bar.style.width = step === 1 ? "50%" : "100%";
+}
 
-  if (step === 1) {
-    bar.style.width = "50%";
-    s1.classList.add("active");
-    s2.classList.remove("active");
+/* ================= PREVIEW ================= */
+function openPreview() {
+  if (!validateVisibleFields("step2")) return;
+
+  const modal = document.getElementById("previewModal");
+  const content = document.getElementById("previewContent");
+
+  let html = "";
+  document
+    .querySelectorAll("#step1 input, #step1 select, #step1 textarea")
+    .forEach(el => {
+      if (el.name && el.value && el.type !== "file") {
+        html += `<p><b>${el.name.replaceAll("_", " ")}:</b> ${el.value}</p>`;
+      }
+    });
+
+  content.innerHTML = html;
+  modal.classList.remove("hidden");
+}
+
+function closePreview() {
+  document.getElementById("previewModal").classList.add("hidden");
+}
+
+/* ================= ADMISSION TYPE ================= */
+function showAdmissionFields() {
+  const type = document.getElementById("admission_through")?.value;
+
+  const kea = document.getElementById("kea_section");
+  const mgmt = document.getElementById("management_section");
+  const keaDoc = document.getElementById("kea_doc");
+  const mgmtDoc = document.getElementById("management_doc");
+
+  kea?.classList.add("hidden");
+  mgmt?.classList.add("hidden");
+  keaDoc?.classList.add("hidden");
+  mgmtDoc?.classList.add("hidden");
+
+  if (type === "KEA") {
+    kea?.classList.remove("hidden");
+    keaDoc?.classList.remove("hidden");
   }
 
-  if (step === 2) {
-    bar.style.width = "100%";
-    s1.classList.remove("active");
-    s2.classList.add("active");
+  if (type === "MANAGEMENT") {
+    mgmt?.classList.remove("hidden");
+    mgmtDoc?.classList.remove("hidden");
   }
 }
 
-/* =====================================================
-   LISTENERS
-===================================================== */
-document
-  .getElementById("admission_through")
-  ?.addEventListener("change", showAdmissionFields);
+/* ================= INIT ================= */
+document.addEventListener("DOMContentLoaded", () => {
+  document
+    .getElementById("admission_through")
+    ?.addEventListener("change", showAdmissionFields);
+
+  showAdmissionFields();
+});
