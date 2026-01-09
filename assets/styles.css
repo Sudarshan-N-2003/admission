@@ -433,3 +433,40 @@ select option {
 #management_doc:not(.hidden) {
   display: block !important;
 }
+
+
+
+
+
+
+
+
+
+.input-error {
+  border: 2px solid #dc2626 !important;
+  background: #fff5f5;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal.hidden {
+  display: none;
+}
+
+.modal-content {
+  background: #fff;
+  width: 95%;
+  max-width: 500px;
+  max-height: 85vh;
+  overflow-y: auto;
+  padding: 20px;
+  border-radius: 12px;
+}
