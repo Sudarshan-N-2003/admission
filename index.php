@@ -312,7 +312,10 @@
 </button>
 
 </div>
-
+div id="previewModal" class="modal hidden">
+    ...
+</div>
+  
 </form>
 </div>
 
