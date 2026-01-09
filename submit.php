@@ -2,9 +2,7 @@
 session_start();
 
 
-if (empty($_POST['email_verified'])) {
-  throw new Exception("Please verify email before submitting.");
-}
+
 
 
 
