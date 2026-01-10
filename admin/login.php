@@ -45,7 +45,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body>
 
-<div class="container">
+<body class="login">
+
+  <div class="admin-box">
     <h2>College Login</h2>
 
     <?php if (!empty($error)): ?>
