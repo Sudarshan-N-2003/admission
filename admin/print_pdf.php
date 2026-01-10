@@ -1,4 +1,6 @@
 <?php
+ob_start();
+
 require_once __DIR__ . '/../db.php';
 require_once __DIR__ . '/../vendor/autoload.php';
 
@@ -6,9 +8,9 @@ use Dompdf\Dompdf;
 use Endroid\QrCode\Builder\Builder;
 use Endroid\QrCode\Writer\SvgWriter;
 
-/* ============================
-   1. FETCH APPLICATION
-============================ */
+/* =====================================================
+   1. DB + APPLICATION FETCH
+===================================================== */
 $pdo = get_db();
 
 $id = $_GET['id'] ?? '';
@@ -16,41 +18,37 @@ if ($id === '') {
     die('Invalid Application ID');
 }
 
-$stmt = $pdo->prepare("
-    SELECT *
-    FROM admissions
-    WHERE application_id = :id
-");
+$stmt = $pdo->prepare("SELECT * FROM admissions WHERE application_id = :id");
 $stmt->execute([':id' => $id]);
-$app = $stmt->fetch();
+$app = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$app) {
     die('Application not found');
 }
 
-/* ============================
-   2. DECODE STORED JSON
-============================ */
-$form = json_decode($app['data'], true) ?? [];
-$docs = json_decode($app['document_status'], true) ?? [];
+/* =====================================================
+   2. FORM DATA (DIRECT COLUMNS – FIXED)
+===================================================== */
+$form = $app; // IMPORTANT: data is stored as columns, NOT JSON
+$docs = json_decode($app['document_status'] ?? '{}', true);
 
-/* ============================
-   3. PHOTO (BASE64)
-============================ */
+/* =====================================================
+   3. PHOTO
+===================================================== */
 $photoHtml = '';
 if (!empty($app['photo_path']) && file_exists($app['photo_path'])) {
     $img = base64_encode(file_get_contents($app['photo_path']));
-    $photoHtml = "<img src='data:image/jpeg;base64,$img' width='90'>";
+    $photoHtml = "<img src='data:image/jpeg;base64,$img' width='90' height='120'>";
 }
 
-/* ============================
-   4. QR CODE (SVG – NO GD)
-============================ */
+/* =====================================================
+   4. QR CODE (SVG – NO GD REQUIRED)
+===================================================== */
 $qrText = implode("\n", [
     "Application ID: {$app['application_id']}",
-    "Mobile: " . ($form['mobile'] ?? ''),
-    "Branch: " . ($form['allotted_branch'] ?? ''),
-    "Admission: " . ($form['admission_through'] ?? '')
+    "Mobile: {$form['mobile']}",
+    "Branch: {$form['allotted_branch']}",
+    "Admission: {$form['admission_through']}"
 ]);
 
 $qrSvg = Builder::create()
@@ -61,31 +59,30 @@ $qrSvg = Builder::create()
     ->build()
     ->getString();
 
-/* ============================
-   5. COMMON HTML HEADER
-============================ */
+/* =====================================================
+   5. COMMON HEADER BLOCK
+===================================================== */
 function headerBlock($photoHtml, $qrSvg, $app) {
     return "
-    <table width='100%'>
+    <table width='100%' style='border:none'>
       <tr>
-        <td align='center' colspan='3'>
-          <b>VIJAYA VITTALA INSTITUTE OF TECHNOLOGY</b><br>
-          <small>
-            35/1, Dodda Gubbi Post, Hennur-Bagalur Road,<br>
-            Thanisandra, Bengaluru, Karnataka – 560077
-          </small>
+        <td colspan='3' align='center'>
+          <b style='font-size:16px'>VIJAYA VITTALA INSTITUTE OF TECHNOLOGY</b><br>
+          <span style='font-size:11px'>
+            35/1, Dodda Gubbi Post, Hennur–Bagalur Road,<br>
+            Thanisandra, Bengaluru – 560077
+          </span>
         </td>
       </tr>
       <tr>
-        <td>
+        <td style='font-size:11px'>
           <b>APPLICATION NO:</b> {$app['application_id']}
         </td>
-        <td align='center'>
-          <b>DATE & TIME:</b> {$app['created_at']}
+        <td align='center' style='font-size:11px'>
+          <b>DATE:</b> {$app['created_at']}
         </td>
         <td align='right'>
-          $photoHtml<br>
-          $qrSvg
+          $photoHtml<br>$qrSvg
         </td>
       </tr>
     </table>
@@ -93,76 +90,74 @@ function headerBlock($photoHtml, $qrSvg, $app) {
     ";
 }
 
-/* ============================
-   6. PERSONAL INFO TABLE
-============================ */
-function personalInfoTable($form) {
+/* =====================================================
+   6. PERSONAL DETAILS TABLE
+===================================================== */
+function personalTable($f) {
 return "
 <table>
-<tr class='section'><td colspan='4'>PERSONAL INFORMATION</td></tr>
-
-<tr><td>STUDENT NAME</td><td colspan='3'>{$form['student_name']}</td></tr>
-<tr><td>GENDER</td><td>{$form['gender']}</td><td>RELIGION</td><td>{$form['religion']}</td></tr>
-<tr><td>CATEGORY</td><td>{$form['category']}</td><td>SUB CASTE</td><td>{$form['sub_caste']}</td></tr>
-<tr><td>DOB</td><td>{$form['dob']}</td><td>STATE</td><td>{$form['state']}</td></tr>
-<tr><td>FATHER / GUARDIAN</td><td colspan='3'>{$form['father_name']}</td></tr>
-<tr><td>MOTHER NAME</td><td colspan='3'>{$form['mother_name']}</td></tr>
-<tr><td>EMAIL</td><td>{$form['email']}</td><td>MOBILE</td><td>{$form['mobile']}</td></tr>
-<tr><td>GUARDIAN MOBILE</td><td colspan='3'>{$form['guardian_mobile']}</td></tr>
-<tr><td>PERMANENT ADDRESS</td><td colspan='3'>{$form['permanent_address']}</td></tr>
-<tr><td>ADMISSION THROUGH</td><td>{$form['admission_through']}</td>
-<td>ALLOTTED BRANCH</td><td>{$form['allotted_branch']}</td></tr>
-<tr><td>PREVIOUS COMBINATION</td><td colspan='3'>{$form['prev_combination']}</td></tr>
+<tr><th colspan='4'>PERSONAL DETAILS</th></tr>
+<tr><td>Student Name</td><td colspan='3'>{$f['student_name']}</td></tr>
+<tr><td>Gender</td><td>{$f['gender']}</td><td>Religion</td><td>{$f['religion']}</td></tr>
+<tr><td>Category</td><td>{$f['category']}</td><td>Sub Caste</td><td>{$f['sub_caste']}</td></tr>
+<tr><td>DOB</td><td>{$f['dob']}</td><td>State</td><td>{$f['state']}</td></tr>
+<tr><td>Father / Guardian</td><td colspan='3'>{$f['father_name']}</td></tr>
+<tr><td>Mother</td><td colspan='3'>{$f['mother_name']}</td></tr>
+<tr><td>Email</td><td>{$f['email']}</td><td>Mobile</td><td>{$f['mobile']}</td></tr>
+<tr><td>Guardian Mobile</td><td colspan='3'>{$f['guardian_mobile']}</td></tr>
+<tr><td>Permanent Address</td><td colspan='3'>{$f['permanent_address']}</td></tr>
+<tr><td>Admission Through</td><td>{$f['admission_through']}</td>
+<td>Allotted Branch</td><td>{$f['allotted_branch']}</td></tr>
+<tr><td>Previous Combination</td><td colspan='3'>{$f['prev_combination']}</td></tr>
 </table>
 ";
 }
 
-/* ============================
-   7. DOCUMENT TABLE
-============================ */
-function docTable($docs) {
+/* =====================================================
+   7. DOCUMENT CHECKLIST TABLE
+===================================================== */
+function docTable($d) {
 return "
 <table>
 <tr><th>Sl</th><th>Document</th><th>Status</th></tr>
-<tr><td>1</td><td>10th Marks Card</td><td>".($docs['marks_10'] ?? '')."</td></tr>
-<tr><td>2</td><td>12th / Diploma Marks Card</td><td>".($docs['marks_12'] ?? '')."</td></tr>
-<tr><td>3</td><td>Study Certificate</td><td>".($docs['study_certificate'] ?? '')."</td></tr>
-<tr><td>4</td><td>Transfer Certificate</td><td>".($docs['transfer_certificate'] ?? '')."</td></tr>
-<tr><td>5</td><td>Photograph</td><td>".($docs['photo'] ?? '')."</td></tr>
+<tr><td>1</td><td>10th Marks Card</td><td>".($d['marks_10'] ?? '')."</td></tr>
+<tr><td>2</td><td>12th / Diploma Marks Card</td><td>".($d['marks_12'] ?? '')."</td></tr>
+<tr><td>3</td><td>Study Certificate</td><td>".($d['study_certificate'] ?? '')."</td></tr>
+<tr><td>4</td><td>Transfer Certificate</td><td>".($d['transfer_certificate'] ?? '')."</td></tr>
+<tr><td>5</td><td>Photograph</td><td>".($d['photo'] ?? '')."</td></tr>
 </table>
 ";
 }
 
-/* ============================
-   8. BUILD FULL HTML
-============================ */
+/* =====================================================
+   8. FULL HTML (STUDENT + COLLEGE COPY)
+===================================================== */
 $html = "
 <style>
 body { font-family: Arial; font-size: 12px; }
 table { width:100%; border-collapse:collapse; margin-top:8px; }
 td, th { border:1px solid #000; padding:4px; }
-.section { background:#e6e6fa; font-weight:bold; }
+th { background:#f0f0f0; }
 .center { text-align:center; }
 </style>
 
 ".headerBlock($photoHtml,$qrSvg,$app)."
-
-".personalInfoTable($form)."
+".personalTable($form)."
 
 <h4 class='center'>ACKNOWLEDGMENT – STUDENT COPY</h4>
 <p>
-This is to certify that the following documents have been received from
-<b>{$form['student_name']}</b> for admission to BE in the branch
-<b>{$form['allotted_branch']}</b> for the academic year <b>2025-2026</b>.
+This is to certify that the documents mentioned below are received from
+<b>{$form['student_name']}</b> for admission to BE –
+<b>{$form['allotted_branch']}</b> for the academic year 2025–26.
 </p>
 
 ".docTable($docs)."
 
 <br><br>
-<table width='100%' style='border:none'>
+<table style='border:none' width='100%'>
 <tr>
 <td style='border:none'>Student Signature</td>
-<td style='border:none' align='right'>Admission Director</td>
+<td style='border:none' align='right'>Admission Officer</td>
 </tr>
 </table>
 
@@ -171,31 +166,35 @@ This is to certify that the following documents have been received from
 <h4 class='center'>ACKNOWLEDGMENT – COLLEGE COPY</h4>
 
 <p>
-This is to certify that the following documents have been received from
-<b>{$form['student_name']}</b> for admission to BE in the branch
-<b>{$form['allotted_branch']}</b> for the academic year <b>2025-2026</b>.
+This is to certify that the documents mentioned below are received from
+<b>{$form['student_name']}</b> for admission to BE –
+<b>{$form['allotted_branch']}</b> for the academic year 2025–26.
 </p>
 
 ".docTable($docs)."
 
 <br><br>
-<table width='100%' style='border:none'>
+<table style='border:none' width='100%'>
 <tr>
 <td style='border:none'>Student Signature</td>
-<td style='border:none' align='right'>Admission Director</td>
+<td style='border:none' align='right'>Admission Officer</td>
 </tr>
 </table>
 ";
 
-/* ============================
-   9. GENERATE PDF
-============================ */
-$dompdf = new Dompdf();
+/* =====================================================
+   9. PDF OUTPUT (FIXED & COMPLETE)
+===================================================== */
+$dompdf = new Dompdf(['isRemoteEnabled' => true]);
 $dompdf->loadHtml($html);
-$dompdf->setPaper('A4','portrait');
+$dompdf->setPaper('A4', 'portrait');
 $dompdf->render();
 
-$dompdf->stream(
-    "VVIT_Application_{$app['application_id']}.pdf",
-    ['Attachment' => true]
-);
+$pdf = $dompdf->output();
+
+ob_end_clean();
+header('Content-Type: application/pdf');
+header('Content-Disposition: attachment; filename="VVIT_'.$id.'.pdf"');
+header('Content-Length: '.strlen($pdf));
+echo $pdf;
+exit;
