@@ -123,24 +123,22 @@
 </select>
 
 <label>Nationality</label>
-<select name="nationality" required>
-  <option>INDIAN</option>
-  <option>NEPAL</option>
-  <option>BANGLADESH</option>
-  <option>SRI LANKA</option>
-  <option>BHUTAN</option>
-  <option>MYANMAR</option>
-  <option>OTHER</option>
+<select name="nationality" id="nationality" required>
+  <option value="">Select Nationality</option>
+  <option value="INDIAN">INDIAN</option>
+  <option value="NEPAL">NEPAL</option>
+  <option value="SRI LANKA">SRI LANKA</option>
+  <option value="BANGLADESH">BANGLADESH</option>
+  <option value="BHUTAN">BHUTAN</option>
+  <option value="MYANMAR">MYANMAR</option>
+  <option value="OTHER">OTHER</option>
 </select>
 
-<label>State</label>
-<select name="state" required>
-  <option>KARNATAKA</option>
-  <option>ANDHRA PRADESH</option>
-  <option>TAMIL NADU</option>
-  <option>KERALA</option>
-  <option>MAHARASHTRA</option>
+<label>State / Province</label>
+<select name="state" id="state" required>
+  <option value="">Select State / Province</option>
 </select>
+
 
 <label>Permanent Address</label>
 <textarea name="permanent_address" required></textarea>
@@ -171,15 +169,19 @@
     <option>GMR</option>
     <option>GMK</option>
     <option>EWS</option>
+    <option>OTHER</option>
   </select>
 
   <label>Allotted Branch</label>
   <select name="allotted_branch">
     <option value="">Select</option>
     <option>CSE</option>
+    <option>CS (AIML)</option>
+    <option>CS (DS)</option>
     <option>AIML</option>
     <option>EC</option>
     <option>ME</option>
+    <option>CIVIL</option>
   </select>
 </div>
 
@@ -189,9 +191,12 @@
   <select name="allotted_branch_management">
     <option value="">Select</option>
     <option>CSE</option>
+    <option>CS (AIML)</option>
+    <option>CS (DS)</option>
     <option>AIML</option>
     <option>EC</option>
     <option>ME</option>
+    <option>CIVIL</option>
   </select>
 </div>
 
