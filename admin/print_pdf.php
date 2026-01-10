@@ -71,35 +71,73 @@ td, th { border:1px solid #000; padding:6px; }
 Thanisandra, Bengaluru, Karnataka – 560077
 </p>
 
-<table class="no-border">
-<tr>
-<td><b>APPLICATION NO:</b> '.$app['application_id'].'</td>
-<td><b>DATE & TIME:</b> '.$app['created_at'].'</td>
-<td style="text-align:right">
-<img src="'.$qrUrl.'" width="90">
-</td>
-</tr>
-</table>
-
 <table>
 <tr class="section"><td colspan="4">PERSONAL INFORMATION</td></tr>
 
-<tr><td>STUDENT NAME</td><td colspan="3">'.$app['student_name'].'</td></tr>
-<tr><td>GENDER</td><td>'.$app['gender'].'</td><td>RELIGION</td><td>'.$app['religion'].'</td></tr>
-<tr><td>CATEGORY</td><td>'.$app['category'].'</td><td>SUB CASTE</td><td>'.$app['sub_caste'].'</td></tr>
-<tr><td>DOB</td><td>'.$app['dob'].'</td><td>STATE</td><td>'.$app['state'].'</td></tr>
-<tr><td>FATHER / GUARDIAN</td><td colspan="3">'.$app['father_name'].'</td></tr>
-<tr><td>MOTHER NAME</td><td colspan="3">'.$app['mother_name'].'</td></tr>
-<tr><td>EMAIL</td><td>'.$app['email'].'</td><td>MOBILE</td><td>'.$app['mobile'].'</td></tr>
-<tr><td>GUARDIAN MOBILE</td><td colspan="3">'.$app['guardian_mobile'].'</td></tr>
-<tr><td>PERMANENT ADDRESS</td><td colspan="3">'.$app['permanent_address'].'</td></tr>
 <tr>
-<td>ADMISSION THROUGH</td>
-<td>'.$app['admission_through'].'</td>
-<td>ALLOTTED BRANCH</td>
-<td>'.$app['allotted_branch'].'</td>
+  <td>STUDENT NAME</td>
+  <td colspan="3">'.($form['student_name'] ?? '').'</td>
 </tr>
-<tr><td>PREVIOUS COMBINATION</td><td colspan="3">'.$app['prev_combination'].'</td></tr>
+
+<tr>
+  <td>GENDER</td>
+  <td>'.($form['gender'] ?? '').'</td>
+  <td>RELIGION</td>
+  <td>'.($form['religion'] ?? '').'</td>
+</tr>
+
+<tr>
+  <td>CATEGORY</td>
+  <td>'.($form['category'] ?? '').'</td>
+  <td>SUB CASTE</td>
+  <td>'.($form['sub_caste'] ?? '').'</td>
+</tr>
+
+<tr>
+  <td>DOB</td>
+  <td>'.($form['dob'] ?? '').'</td>
+  <td>STATE</td>
+  <td>'.($form['state'] ?? '').'</td>
+</tr>
+
+<tr>
+  <td>FATHER / GUARDIAN</td>
+  <td colspan="3">'.($form['father_name'] ?? '').'</td>
+</tr>
+
+<tr>
+  <td>MOTHER NAME</td>
+  <td colspan="3">'.($form['mother_name'] ?? '').'</td>
+</tr>
+
+<tr>
+  <td>EMAIL</td>
+  <td>'.($form['email'] ?? '').'</td>
+  <td>MOBILE</td>
+  <td>'.($form['mobile'] ?? '').'</td>
+</tr>
+
+<tr>
+  <td>GUARDIAN MOBILE</td>
+  <td colspan="3">'.($form['guardian_mobile'] ?? '').'</td>
+</tr>
+
+<tr>
+  <td>PERMANENT ADDRESS</td>
+  <td colspan="3">'.($form['permanent_address'] ?? '').'</td>
+</tr>
+
+<tr>
+  <td>ADMISSION THROUGH</td>
+  <td>'.($form['admission_through'] ?? '').'</td>
+  <td>ALLOTTED BRANCH</td>
+  <td>'.($form['allotted_branch'] ?? '').'</td>
+</tr>
+
+<tr>
+  <td>PREVIOUS COMBINATION</td>
+  <td colspan="3">'.($form['prev_combination'] ?? '').'</td>
+</tr>
 </table>
 ';
 
