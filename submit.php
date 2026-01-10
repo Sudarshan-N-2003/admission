@@ -1,15 +1,8 @@
 <?php
 session_start();
 
-
-
-
-
-
-
-
-
 require_once __DIR__ . '/functions.php';
+require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/vendor/autoload.php';
 
 use Dompdf\Dompdf;
@@ -19,7 +12,7 @@ use PHPMailer\PHPMailer\Exception;
 try {
 
   /* ==================================================
-     1. REQUIRED FIELD VALIDATION (ALL REQUIRED)
+     1. REQUIRED FIELD VALIDATION
   ================================================== */
   $required = [
     'student_name','dob','gender',
@@ -32,9 +25,9 @@ try {
     'admission_through'
   ];
 
-  foreach ($required as $f) {
-    if (empty(trim($_POST[$f] ?? ''))) {
-      throw new Exception("Missing required field: $f");
+  foreach ($required as $field) {
+    if (empty(trim($_POST[$field] ?? ''))) {
+      throw new Exception("Missing required field: $field");
     }
   }
 
@@ -47,8 +40,9 @@ try {
   }
 
   /* ==================================================
-     3. ADMISSION TYPE LOGIC
+     3. ADMISSION TYPE VALIDATION
   ================================================== */
+
   if ($data['admission_through'] === 'KEA') {
 
     foreach (['cet_number','cet_rank','seat_allotted','allotted_branch'] as $f) {
@@ -59,56 +53,45 @@ try {
 
   } elseif ($data['admission_through'] === 'MANAGEMENT') {
 
-    if (empty($data['management_branch'] ?? '')) {
+    if (empty($data['allotted_branch_management'] ?? '')) {
       throw new Exception("Missing Management branch");
     }
 
-    // unify branch key
-    $data['allotted_branch'] = $data['management_branch'];
+    // Normalize for DB / PDF
+    $data['allotted_branch'] = $data['allotted_branch_management'];
     $data['seat_allotted']   = 'MANAGEMENT';
   }
 
+  /* ==================================================
+     4. DUPLICATE ENTRY CHECK
+  ================================================== */
+  $pdo = get_db();
 
+  $check = $pdo->prepare("
+    SELECT 1 FROM admissions
+    WHERE mobile = :mobile OR email = :email
+    LIMIT 1
+  ");
+  $check->execute([
+    ':mobile' => $data['mobile'],
+    ':email'  => $data['email']
+  ]);
 
-/* ---------------------------------
-   3.5 DUPLICATE ENTRY CHECK
-----------------------------------*/
-require_once __DIR__ . '/db.php';
-$pdo = get_db();
-
-$check = $pdo->prepare("
-  SELECT 1
-  FROM admissions
-  WHERE mobile = :mobile
-     OR email  = :email
-  LIMIT 1
-");
-
-$check->execute([
-  ':mobile' => $data['mobile'],
-  ':email'  => $data['email']
-]);
-
-if ($check->fetch()) {
-  throw new Exception(
-    "Duplicate entry detected. This mobile number or email is already registered."
-  );
-}
-
-
-
-
-  
+  if ($check->fetch()) {
+    throw new Exception(
+      "Duplicate entry detected. Mobile number or Email already registered."
+    );
+  }
 
   /* ==================================================
-     4. GENERATE APPLICATION ID
+     5. GENERATE APPLICATION ID
   ================================================== */
-  $year = fetch_external_year();              // 2025
-  $serial = next_serial_for_year($year);      // 001
+  $year = fetch_external_year();            // eg 2025
+  $serial = next_serial_for_year($year);    // 001
   $application_id = '1VJ' . substr($year, -2) . $serial;
 
   /* ==================================================
-     5. RENDER-SAFE DIRECTORIES
+     6. FILE STORAGE (RENDER SAFE)
   ================================================== */
   $baseDir = sys_get_temp_dir() . '/admission_app';
   $uploadDir = $baseDir . '/uploads/' . $application_id;
@@ -118,7 +101,7 @@ if ($check->fetch()) {
   }
 
   /* ==================================================
-     6. FILE UPLOADS (ALL REQUIRED)
+     7. FILE UPLOADS
   ================================================== */
   $maxSize = 2 * 1024 * 1024; // 2MB
   $files = [];
@@ -136,13 +119,17 @@ if ($check->fetch()) {
   );
 
   $files['photo'] = validate_and_move(
-    $_FILES['photo'], $uploadDir, ['jpg','jpeg'], $maxSize
+    $_FILES['passport_photo'], $uploadDir, ['jpg','jpeg','png'], $maxSize
+  );
+
+  $files['signature'] = validate_and_move(
+    $_FILES['student_signature'], $uploadDir, ['jpg','jpeg','png'], $maxSize
   );
 
   if ($data['admission_through'] === 'KEA') {
 
     if (empty($_FILES['kea_acknowledgement']['name'])) {
-      throw new Exception('KEA payment acknowledgement is required');
+      throw new Exception("KEA payment acknowledgement is required");
     }
 
     $files['kea_acknowledgement'] = validate_and_move(
@@ -153,7 +140,7 @@ if ($check->fetch()) {
   if ($data['admission_through'] === 'MANAGEMENT') {
 
     if (empty($_FILES['management_receipt']['name'])) {
-      throw new Exception('College fees payment receipt is required');
+      throw new Exception("College fees payment receipt is required");
     }
 
     $files['management_receipt'] = validate_and_move(
@@ -162,9 +149,35 @@ if ($check->fetch()) {
   }
 
   /* ==================================================
-     7. GENERATE PDF
+     8. SAVE TO DATABASE
   ================================================== */
-  $pdfHtml = build_application_pdf_html([
+  $stmt = $pdo->prepare("
+    INSERT INTO admissions (
+      application_id, student_name, mobile, email,
+      allotted_branch, seat_allotted,
+      admission_through, data_json, created_at
+    ) VALUES (
+      :id, :name, :mobile, :email,
+      :branch, :quota,
+      :mode, :data, NOW()
+    )
+  ");
+
+  $stmt->execute([
+    ':id'     => $application_id,
+    ':name'   => $data['student_name'],
+    ':mobile' => $data['mobile'],
+    ':email'  => $data['email'],
+    ':branch' => $data['allotted_branch'],
+    ':quota'  => $data['seat_allotted'],
+    ':mode'   => $data['admission_through'],
+    ':data'   => json_encode($data)
+  ]);
+
+  /* ==================================================
+     9. GENERATE PDF
+  ================================================== */
+  $html = build_application_pdf_html([
     'application_id' => $application_id,
     'data' => $data,
     'files' => $files
@@ -173,13 +186,13 @@ if ($check->fetch()) {
   $pdfPath = $uploadDir . '/' . $application_id . '.pdf';
 
   $dompdf = new Dompdf();
-  $dompdf->loadHtml($pdfHtml);
-  $dompdf->setPaper('A4', 'portrait');
+  $dompdf->setPaper('A4','portrait');
+  $dompdf->loadHtml($html);
   $dompdf->render();
   file_put_contents($pdfPath, $dompdf->output());
 
   /* ==================================================
-     8. SEND EMAIL (NON-BLOCKING)
+     10. SEND EMAIL (OPTIONAL)
   ================================================== */
   try {
     $mail = new PHPMailer(true);
@@ -193,29 +206,24 @@ if ($check->fetch()) {
 
     $mail->setFrom(getenv('FROM_EMAIL'), getenv('FROM_NAME'));
     $mail->addAddress($data['email'], $data['student_name']);
-    $mail->addAttachment($pdfPath, $application_id . '.pdf');
+    $mail->addAttachment($pdfPath);
 
     $mail->isHTML(true);
-    $mail->Subject = "VVIT Admission Application – $application_id";
+    $mail->Subject = "VVIT Admission Application - $application_id";
     $mail->Body = "
       <p>Dear <b>{$data['student_name']}</b>,</p>
-      <p>Your admission application has been submitted successfully.</p>
+      <p>Your application has been submitted successfully.</p>
       <p><b>Application ID:</b> $application_id</p>
-      <p>Please find the attached application PDF.</p>
-      <br>
       <p>Regards,<br>VVIT Admissions</p>
     ";
-
     $mail->send();
   } catch (Exception $e) {
-    error_log('Mail Error: ' . $e->getMessage());
+    error_log('Mail error: '.$e->getMessage());
   }
 
   /* ==================================================
-     9. SUCCESS REDIRECT
+     11. SUCCESS
   ================================================== */
-  $_SESSION['application_id'] = $application_id;
-  $_SESSION['pdf_path'] = $pdfPath;
   $_SESSION['flash'] = "Application submitted successfully. Your ID: $application_id";
   $_SESSION['flash_type'] = 'success';
 
@@ -224,7 +232,7 @@ if ($check->fetch()) {
 
 } catch (Exception $e) {
 
-  $_SESSION['flash'] = 'Error: ' . $e->getMessage();
+  $_SESSION['flash'] = "Error: " . $e->getMessage();
   $_SESSION['flash_type'] = 'error';
   header("Location: index.php");
   exit;
