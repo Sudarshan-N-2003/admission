@@ -112,3 +112,66 @@ document.addEventListener("DOMContentLoaded", () => {
 
   showAdmissionFields();
 });
+
+
+
+
+
+
+
+/* ===============================
+   NATIONALITY → STATE LINKING
+================================ */
+
+const stateData = {
+  INDIAN: [
+    "ANDHRA PRADESH","ARUNACHAL PRADESH","ASSAM","BIHAR","CHHATTISGARH",
+    "GOA","GUJARAT","HARYANA","HIMACHAL PRADESH","JHARKHAND",
+    "KARNATAKA","KERALA","MADHYA PRADESH","MAHARASHTRA","MANIPUR",
+    "MEGHALAYA","MIZORAM","NAGALAND","ODISHA","PUNJAB","RAJASTHAN",
+    "SIKKIM","TAMIL NADU","TELANGANA","TRIPURA","UTTAR PRADESH",
+    "UTTARAKHAND","WEST BENGAL",
+    "ANDAMAN AND NICOBAR ISLANDS","CHANDIGARH",
+    "DADRA AND NAGAR HAVELI AND DAMAN AND DIU","DELHI",
+    "JAMMU AND KASHMIR","LADAKH","LAKSHADWEEP","PUDUCHERRY"
+  ],
+
+  NEPAL: [
+    "KOSHI","MADHESH","BAGMATI","GANDaki",
+    "LUMBINI","KARNALI","SUDURPASHCHIM"
+  ],
+
+  "SRI LANKA": [
+    "CENTRAL","EASTERN","NORTHERN","NORTH CENTRAL",
+    "NORTH WESTERN","SABARAGAMUWA","SOUTHERN","UVA","WESTERN"
+  ]
+};
+
+function updateStateOptions() {
+  const nationality = document.getElementById("nationality");
+  const stateSelect = document.getElementById("state");
+
+  if (!nationality || !stateSelect) return;
+
+  const value = nationality.value;
+  stateSelect.innerHTML = '<option value="">Select State / Province</option>';
+
+  if (stateData[value]) {
+    stateData[value].forEach(state => {
+      const opt = document.createElement("option");
+      opt.value = state;
+      opt.textContent = state;
+      stateSelect.appendChild(opt);
+    });
+  } else {
+    const opt = document.createElement("option");
+    opt.value = "NOT APPLICABLE";
+    opt.textContent = "NOT APPLICABLE";
+    stateSelect.appendChild(opt);
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("nationality")
+    ?.addEventListener("change", updateStateOptions);
+});
