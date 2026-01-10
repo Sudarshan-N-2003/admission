@@ -43,8 +43,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <title>College Login</title>
     <link rel="stylesheet" href="../assets/admin.css">
 </head>
-<body>
-
 <body class="login">
 
   <div class="admin-box">
