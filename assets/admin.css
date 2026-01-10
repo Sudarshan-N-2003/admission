@@ -218,3 +218,197 @@ form {
     text-align: left;
   }
 }
+
+
+/* =========================
+   RESET & BASE
+========================= */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+html, body {
+  height: 100%;
+  background: #f4f6f9;
+  color: #222;
+}
+
+/* =========================
+   LAYOUT
+========================= */
+.container {
+  width: 100%;
+  min-height: 100vh;
+  padding: 22px 28px;
+}
+
+/* =========================
+   TOP BAR
+========================= */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #ffffff;
+  padding: 16px 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+  margin-bottom: 20px;
+}
+
+.topbar h2 {
+  font-size: 22px;
+  font-weight: 600;
+}
+
+/* =========================
+   BUTTONS
+========================= */
+.college-btn,
+.btn-primary,
+.secondary {
+  display: inline-block;
+  padding: 9px 16px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: 0.2s ease;
+}
+
+.college-btn {
+  background: #6c757d;
+  color: #fff;
+}
+
+.college-btn:hover {
+  opacity: 0.9;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #4facfe, #00c6ff);
+  color: #fff;
+}
+
+.secondary {
+  background: #198754;
+  color: #fff;
+}
+
+.btn-primary:hover,
+.secondary:hover {
+  transform: translateY(-1px);
+  opacity: 0.95;
+}
+
+/* =========================
+   INFO TEXT
+========================= */
+p {
+  margin-bottom: 6px;
+  font-size: 14px;
+}
+
+/* =========================
+   FLASH MESSAGES
+========================= */
+.flash {
+  padding: 12px 14px;
+  border-radius: 8px;
+  margin: 14px 0;
+  font-size: 14px;
+}
+
+.flash.error {
+  background: #ffe3e3;
+  color: #a30000;
+  border-left: 5px solid #ff4d4d;
+}
+
+.flash.info {
+  background: #e7f1ff;
+  color: #084298;
+  border-left: 5px solid #4facfe;
+}
+
+/* =========================
+   FORM
+========================= */
+form {
+  background: #ffffff;
+  padding: 18px 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  margin-top: 12px;
+}
+
+/* =========================
+   TABLE
+========================= */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+.table th {
+  background: #eef3f8;
+  padding: 12px;
+  font-size: 14px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+.table td {
+  padding: 11px 12px;
+  font-size: 14px;
+  border-bottom: 1px solid #eee;
+}
+
+.table tr:hover {
+  background: #f9fbfd;
+}
+
+/* =========================
+   SELECT
+========================= */
+select {
+  padding: 7px 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  min-width: 160px;
+}
+
+select:disabled {
+  background: #e9ecef;
+  cursor: not-allowed;
+}
+
+/* =========================
+   ACTIONS
+========================= */
+.actions {
+  margin-top: 18px;
+  display: flex;
+  gap: 12px;
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+@media (max-width: 768px) {
+  .actions {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  select {
+    width: 100%;
+  }
+}
