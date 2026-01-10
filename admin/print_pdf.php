@@ -5,7 +5,17 @@ require_once __DIR__ . '/../vendor/autoload.php';
 
 use Dompdf\Dompdf;
 use Endroid\QrCode\Builder\Builder;
-use Endroid\QrCode\Writer\PngWriter;
+use Endroid\QrCode\Writer\SvgWriter;
+
+$qrResult = Builder::create()
+    ->writer(new SvgWriter())
+    ->data($qrText)
+    ->size(120)
+    ->margin(0)
+    ->build();
+
+$qrSvg = $qrResult->getString();
+
 
 /* ===============================
    1. DB CONNECTION & FETCH DATA
@@ -74,7 +84,10 @@ $html = "
   <div class='header'>
     <div>$photoHtml</div>
     <div>
-      <img src='data:image/png;base64,$qrBase64' width='110'><br>
+      <div style="width:110px;height:110px">
+  <?= $qrSvg ?>
+</div>
+
       <b>ID:</b> {$d['application_id']}
     </div>
   </div>
