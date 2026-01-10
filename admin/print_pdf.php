@@ -113,6 +113,36 @@ $gFemale = ($d['gender'] === 'FEMALE') ? '☑' : '☐';
 /* ===============================
    PDF HTML
 ================================ */
+$appId      = e($id);
+$createdAt = e($d['created_at']);
+$name      = e($d['student_name']);
+$religion  = e($d['religion']);
+$category  = e($d['category']);
+$subCaste  = e($d['sub_caste']);
+$dob       = e($d['dob']);
+$state     = e($d['state']);
+$father    = e($d['father_name']);
+$mother    = e($d['mother_name']);
+$email     = e($d['email']);
+$mobile    = e($d['mobile']);
+$gmobile   = e($d['guardian_mobile']);
+$address   = e($d['permanent_address']);
+$admission = e($d['admission_through']);
+$branch    = e(branch_full_form($d['allotted_branch']));
+$prevComb  = e($d['prev_combination']);
+
+$doc10  = doc_status($status, 'marks_10');
+$doc12  = doc_status($status, 'marks_12');
+$docSC  = doc_status($status, 'study_certificate');
+$docTC  = doc_status($status, 'transfer_certificate');
+$docP   = doc_status($status, 'photo');
+
+
+
+
+
+
+
 $html = <<<HTML
 <!DOCTYPE html>
 <html>
