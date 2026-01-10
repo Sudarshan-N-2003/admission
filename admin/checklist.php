@@ -94,7 +94,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$locked) {
 <link rel="stylesheet" href="../assets/styles.css">
 </head>
 <body>
-
+<div class="page-wrapper">
 <div class="container">
 
   <div class="topbar">
@@ -174,6 +174,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$locked) {
   </form>
 
 </div>
-
+</div>
 </body>
 </html>
