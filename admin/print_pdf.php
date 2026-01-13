@@ -1,138 +1,183 @@
 <?php
-ob_start();
+session_start();
 
+/* ===============================
+   AUTH + DB
+================================ */
 require_once __DIR__ . '/../db.php';
 require_once __DIR__ . '/../vendor/autoload.php';
 
-use Dompdf\Dompdf;
+use TCPDF;
 
-/* -------------------------------
-   GET APPLICATION ID
--------------------------------- */
+/* ===============================
+   VALIDATE ID
+================================ */
 $appId = $_GET['id'] ?? '';
-if (!$appId) {
-  die('Invalid Application ID');
+if ($appId === '') {
+    die('Invalid Application ID');
 }
 
-/* -------------------------------
-   FETCH DATA FROM DB
--------------------------------- */
+/* ===============================
+   FETCH DATA
+================================ */
 $pdo = get_db();
 
 $stmt = $pdo->prepare("
-  SELECT *
-  FROM admissions
-  WHERE application_id = :id
+    SELECT *
+    FROM admissions
+    WHERE application_id = :id
 ");
 $stmt->execute([':id' => $appId]);
-$d = $stmt->fetch();
+$row = $stmt->fetch(PDO::FETCH_ASSOC);
 
-if (!$d) {
-  die('Application not found');
+if (!$row) {
+    die('Application not found');
 }
 
-/* -------------------------------
-   QR CODE (NO GD REQUIRED)
--------------------------------- */
-$qrText = "ID: {$d['application_id']}\n"
-        . "MOBILE: {$d['mobile']}\n"
-        . "BRANCH: {$d['allotted_branch']}\n"
-        . "TYPE: {$d['admission_through']}";
+/* ===============================
+   NORMALIZE DATA
+================================ */
+function v($key, $row) {
+    return htmlspecialchars($row[$key] ?? '', ENT_QUOTES, 'UTF-8');
+}
 
-$qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=" . urlencode($qrText);
+/* ===============================
+   CREATE PDF
+================================ */
+$pdf = new TCPDF('P', 'mm', 'A4', true, 'UTF-8', false);
 
-/* -------------------------------
-   IMAGE PATHS
--------------------------------- */
-$photoPath = $d['photo_path'] ? 'file://' . $d['photo_path'] : '';
+$pdf->setCreator('VVIT');
+$pdf->setAuthor('VVIT Admissions');
+$pdf->setTitle('Admission Application');
 
-/* -------------------------------
-   BUILD HTML
--------------------------------- */
-$html = "
-<style>
-  body { font-family: Arial, sans-serif; font-size: 12px; }
-  .page { page-break-after: always; }
-  .header { display:flex; justify-content:space-between; }
-  .photo { width:120px; height:140px; border:1px solid #000; }
-  .qr { width:120px; }
-  .section { margin-top:10px; }
-  table { width:100%; border-collapse:collapse; }
-  td { padding:4px; vertical-align:top; }
-  .line { border-top:1px dashed #000; margin:10px 0; }
-  .center { text-align:center; font-family:'Times New Roman'; font-weight:bold; }
-</style>
+$pdf->setMargins(12, 12, 12);
+$pdf->setAutoPageBreak(true, 12);
+$pdf->setPrintHeader(false);
+$pdf->setPrintFooter(false);
 
-<!-- ================= PAGE 1 ================= -->
-<div class='page'>
+/* ============================================================
+   PAGE 1 — STUDENT COPY
+============================================================ */
+$pdf->AddPage();
 
-  <!-- HEADER -->
-  <div class='header'>
-    <img src='{$photoPath}' class='photo'>
-    <div>
-      <b>Application ID:</b> {$d['application_id']}<br>
-      <b>Date:</b> ".date('d-m-Y')."<br><br>
-      <img src='{$qrUrl}' class='qr'>
-    </div>
-  </div>
+/* ---------- HEADER ---------- */
+$pdf->SetFont('helvetica', 'B', 14);
+$pdf->Cell(0, 8, 'Vijay Vittal Institute of Technology', 0, 1, 'C');
+$pdf->SetFont('helvetica', '', 10);
+$pdf->Cell(0, 6, 'Admission Application – Student Copy', 0, 1, 'C');
+$pdf->Ln(4);
 
-  <!-- 70% STUDENT INFO -->
-  <div class='section'>
-    <table>
-      <tr><td><b>Name</b></td><td>{$d['student_name']}</td></tr>
-      <tr><td><b>Gender</b></td><td>{$d['gender']}</td></tr>
-      <tr><td><b>DOB</b></td><td>{$d['dob']}</td></tr>
-      <tr><td><b>Religion</b></td><td>{$d['religion']}</td></tr>
-      <tr><td><b>Category</b></td><td>{$d['category']} ({$d['sub_caste']})</td></tr>
-      <tr><td><b>Father Name</b></td><td>{$d['father_name']}</td></tr>
-      <tr><td><b>Mother Name</b></td><td>{$d['mother_name']}</td></tr>
-      <tr><td><b>Mobile</b></td><td>{$d['mobile']}</td></tr>
-      <tr><td><b>Email</b></td><td>{$d['email']}</td></tr>
-      <tr><td><b>Address</b></td><td>{$d['permanent_address']}</td></tr>
-      <tr><td><b>Previous College</b></td><td>{$d['prev_college']}</td></tr>
-      <tr><td><b>Combination</b></td><td>{$d['prev_combination']}</td></tr>
-      <tr><td><b>Admission Type</b></td><td>{$d['admission_through']}</td></tr>
-      <tr><td><b>Branch</b></td><td>{$d['allotted_branch']}</td></tr>
-    </table>
-  </div>
+/* ---------- QR CODE ---------- */
+$qrText = implode("\n", [
+    'Application ID: ' . v('application_id', $row),
+    'Mobile: ' . v('mobile', $row),
+    'Branch: ' . v('allotted_branch', $row),
+    'Admission: ' . v('admission_through', $row)
+]);
 
-  <!-- STUDENT COPY (BOTTOM 30%) -->
-  <div class='line'></div>
-  <div class='center'>STUDENT COPY</div>
+$pdf->write2DBarcode(
+    $qrText,
+    'QRCODE,H',
+    165,
+    15,
+    30,
+    30
+);
 
-</div>
+/* ---------- PHOTO ---------- */
+if (!empty($row['photo_path']) && file_exists($row['photo_path'])) {
+    $pdf->Image($row['photo_path'], 15, 25, 30, 38);
+}
 
-<!-- ================= PAGE 2 ================= -->
-<div class='page'>
+/* ---------- INFO TABLE ---------- */
+$pdf->Ln(42);
+$pdf->SetFont('helvetica', '', 10);
 
-  <!-- COLLEGE COPY (TOP 30%) -->
-  <div class='center'>VIJAY VITTAL INSTITUTE OF TECHNOLOGY</div>
-  <div class='center'>COLLEGE COPY</div>
+function row($pdf, $label, $value) {
+    $pdf->Cell(55, 7, $label, 1);
+    $pdf->Cell(0, 7, $value, 1, 1);
+}
 
-  <div class='section'>
-    <p>
-      Certified that <b>{$d['student_name']}</b> has been admitted to
-      <b>{$d['allotted_branch']}</b> through
-      <b>{$d['admission_through']}</b>.
-    </p>
-  </div>
+row($pdf, 'Application ID', v('application_id', $row));
+row($pdf, 'Student Name', v('student_name', $row));
+row($pdf, 'Gender / DOB', v('gender', $row) . ' / ' . v('dob', $row));
+row($pdf, 'Religion / Category', v('religion', $row) . ' / ' . v('category', $row));
+row($pdf, 'Sub Caste', v('sub_caste', $row));
+row($pdf, 'Father Name', v('father_name', $row));
+row($pdf, 'Mother Name', v('mother_name', $row));
+row($pdf, 'Mobile / Guardian', v('mobile', $row) . ' / ' . v('guardian_mobile', $row));
+row($pdf, 'Email', v('email', $row));
+row($pdf, 'Address', v('permanent_address', $row));
+row($pdf, 'Previous College', v('prev_college', $row));
+row($pdf, 'Previous Combination', v('prev_combination', $row));
+row($pdf, 'Admission Through', v('admission_through', $row));
+row($pdf, 'Allotted Branch', v('allotted_branch', $row));
+row($pdf, 'Allotted Quota', v('seat_allotted', $row));
 
-</div>
-";
+/* ---------- STUDENT SIGN ---------- */
+$pdf->Ln(10);
+$pdf->Cell(0, 8, 'Student Signature', 0, 1);
+if (!empty($row['signature_path']) && file_exists($row['signature_path'])) {
+    $pdf->Image($row['signature_path'], 15, $pdf->GetY(), 40, 15);
+}
 
-/* -------------------------------
-   GENERATE PDF
--------------------------------- */
-$dompdf = new Dompdf(['isRemoteEnabled' => true]);
-$dompdf->loadHtml($html);
-$dompdf->setPaper('A4', 'portrait');
-$dompdf->render();
+/* ============================================================
+   PAGE 2 — COLLEGE COPY
+============================================================ */
+$pdf->AddPage();
 
-$pdf = $dompdf->output();
+$pdf->SetFont('helvetica', 'B', 14);
+$pdf->Cell(0, 8, 'Vijay Vittal Institute of Technology', 0, 1, 'C');
+$pdf->SetFont('helvetica', '', 10);
+$pdf->Cell(0, 6, 'Admission Application – College Copy', 0, 1, 'C');
+$pdf->Ln(6);
 
-ob_end_clean();
-header('Content-Type: application/pdf');
-header('Content-Disposition: attachment; filename="'.$appId.'.pdf"');
-header('Content-Length: '.strlen($pdf));
-echo $pdf;
+/* ---------- SUMMARY ---------- */
+$pdf->SetFont('helvetica', '', 10);
+
+row($pdf, 'Application ID', v('application_id', $row));
+row($pdf, 'Student Name', v('student_name', $row));
+row($pdf, 'Mobile', v('mobile', $row));
+row($pdf, 'Admission Type', v('admission_through', $row));
+row($pdf, 'Branch', v('allotted_branch', $row));
+
+/* ---------- CHECKLIST ---------- */
+$pdf->Ln(6);
+$pdf->SetFont('helvetica', 'B', 11);
+$pdf->Cell(0, 8, 'Document Checklist', 0, 1);
+
+$pdf->SetFont('helvetica', '', 10);
+
+$status = json_decode($row['document_status'] ?? '{}', true);
+
+$docs = [
+    'marks_10' => '10th Marks Card',
+    'marks_12' => '12th / Diploma Marks Card',
+    'study_certificate' => 'Study Certificate',
+    'transfer_certificate' => 'Transfer Certificate',
+    'photo' => 'Photograph'
+];
+
+foreach ($docs as $k => $label) {
+    $pdf->Cell(120, 7, $label, 1);
+    $pdf->Cell(0, 7, ($status[$k] ?? 'PENDING'), 1, 1);
+}
+
+/* ---------- FOOTER ---------- */
+$pdf->Ln(12);
+$pdf->Cell(0, 8, 'Office Seal & Signature', 0, 1);
+
+/* ===============================
+   MARK AS PRINTED
+================================ */
+$pdo->prepare("
+    UPDATE admissions
+    SET printed_at = NOW()
+    WHERE application_id = :id
+")->execute([':id' => $appId]);
+
+/* ===============================
+   OUTPUT PDF
+================================ */
+$pdf->Output('VVIT_' . $appId . '.pdf', 'D');
 exit;
