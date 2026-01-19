@@ -1,5 +1,5 @@
 <?php
-// IMPORTANT: no spaces, no echo, no HTML before this file
+
 
 require_once __DIR__ . '/../db.php';
 require_once __DIR__ . '/../vendor/autoload.php';
