@@ -1,7 +1,8 @@
 <?php
-// IMPORTANT: no spaces, no echo before this
+// NO spaces, NO echo, NO HTML before this
 require_once __DIR__ . '/../db.php';
 require_once __DIR__ . '/../vendor/autoload.php';
+
 
 use TCPDF;
 
@@ -122,7 +123,7 @@ $pdf->SetFont('helvetica', '', 9);
 $pdf->MultiCell(
     0,
     6,
-    "This is to certify that the following documents have been received from {$d['student_name']} for admission to BE in the Branch {$d['allotted_branch']} for the academic year {$d['academic_year']}.",
+    "This is to certify that the following documents have been received from {$d['student_name']} for admission to BE in the Branch {$d['allotted_branch']} for the academic year {$academic_year}.",
     0
 );
 
