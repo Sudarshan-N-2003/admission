@@ -1,5 +1,5 @@
 <?php
-// NO spaces, NO echo, NO HTML before this file
+// IMPORTANT: no spaces, no echo, no HTML before this file
 
 require_once __DIR__ . '/../db.php';
 require_once __DIR__ . '/../vendor/autoload.php';
@@ -9,11 +9,11 @@ require_once __DIR__ . '/../vendor/autoload.php';
 // ---------------------------
 $id = $_GET['id'] ?? '';
 if (!$id) {
-    die('Invalid Application ID');
+    exit('Invalid Application ID');
 }
 
 // ---------------------------
-// FETCH DATA
+// FETCH DATA FROM DB
 // ---------------------------
 $pdo = get_db();
 
@@ -26,24 +26,30 @@ $stmt->execute([':id' => $id]);
 $d = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$d) {
-    die('Application not found');
+    exit('Application not found');
 }
 
 // ---------------------------
-// FIX ACADEMIC YEAR (NO DB COLUMN)
+// FIX ACADEMIC YEAR (SAFE)
 // ---------------------------
 $year = date('Y', strtotime($d['created_at']));
 $academic_year = $year . ' - ' . ($year + 1);
 
 // ---------------------------
-// INIT TCPDF
+// TCPDF INIT
 // ---------------------------
 $pdf = new TCPDF('P', 'mm', 'A4', true, 'UTF-8', false);
 $pdf->SetCreator('VVIT');
 $pdf->SetAuthor('VVIT');
 $pdf->SetTitle('Admission Application');
 $pdf->SetMargins(10, 10, 10);
-$pdf->SetAutoPageBreak(true, 12);
+$pdf->SetAutoPageBreak(true, 15);
+$pdf->SetPrintHeader(false);
+$pdf->SetPrintFooter(false);
+
+// ==========================================================
+// PAGE 1 – STUDENT COPY
+// ==========================================================
 $pdf->AddPage();
 $pdf->SetFont('helvetica', '', 9);
 
@@ -63,26 +69,26 @@ $pdf->MultiCell(
 );
 $pdf->Ln(3);
 
-// Application + Date
 $pdf->Cell(95, 6, 'APPLICATION NO: ' . $d['application_id'], 0, 0);
-$pdf->Cell(
-    95,
-    6,
-    'DATE & TIME: ' . date('d-m-Y H:i:s', strtotime($d['created_at'])),
-    0,
-    1,
-    'R'
-);
+$pdf->Cell(95, 6, 'DATE & TIME: ' . date('d-m-Y H:i:s', strtotime($d['created_at'])), 0, 1, 'R');
 
 // ---------------------------
-// PHOTO BOX
+// PHOTO (CLOUDFLARE SAFE)
 // ---------------------------
 $x = 170;
 $y = 35;
 $pdf->Rect($x, $y, 25, 30);
 
-if (!empty($d['photo_path']) && file_exists($d['photo_path'])) {
-    $pdf->Image($d['photo_path'], $x, $y, 25, 30);
+if (!empty($d['photo_path'])) {
+    $tmpPhoto = sys_get_temp_dir() . '/photo_' . uniqid() . '.jpg';
+    $imgData = @file_get_contents($d['photo_path']);
+
+    if ($imgData !== false) {
+        file_put_contents($tmpPhoto, $imgData);
+        if (file_exists($tmpPhoto)) {
+            $pdf->Image($tmpPhoto, $x, $y, 25, 30);
+        }
+    }
 }
 
 // ---------------------------
@@ -115,17 +121,11 @@ row($pdf, 'MOTHER NAME', $d['mother_name']);
 row($pdf, 'EMAIL', $d['email'], 'MOBILE', $d['mobile']);
 row($pdf, 'GUARDIAN MOBILE', $d['guardian_mobile']);
 row($pdf, 'PERMANENT ADDRESS', $d['permanent_address']);
-row(
-    $pdf,
-    'ADMISSION THROUGH',
-    $d['admission_through'],
-    'ALLOTTED BRANCH',
-    $d['allotted_branch']
-);
+row($pdf, 'ADMISSION THROUGH', $d['admission_through'], 'ALLOTTED BRANCH', $d['allotted_branch']);
 row($pdf, 'PREVIOUS COMBINATION', $d['prev_combination']);
 
 // ---------------------------
-// STUDENT COPY
+// ACKNOWLEDGMENT – STUDENT COPY
 // ---------------------------
 $pdf->Ln(6);
 $pdf->SetFont('helvetica', 'B', 10);
@@ -168,9 +168,9 @@ $pdf->Ln(12);
 $pdf->Cell(90, 7, 'Student Signature', 0, 0);
 $pdf->Cell(90, 7, 'Admission Director', 0, 1, 'R');
 
-// ---------------------------
+// ==========================================================
 // PAGE 2 – COLLEGE COPY
-// ---------------------------
+// ==========================================================
 $pdf->AddPage();
 
 $pdf->SetFont('helvetica', 'B', 12);
@@ -210,7 +210,7 @@ $pdf->Cell(90, 7, 'Student Signature', 0, 0);
 $pdf->Cell(90, 7, 'Admission Director', 0, 1, 'R');
 
 // ---------------------------
-// OUTPUT
+// OUTPUT PDF
 // ---------------------------
 $pdf->Output('VVIT_' . $id . '.pdf', 'I');
 exit;
