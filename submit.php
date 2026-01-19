@@ -19,6 +19,7 @@ try {
     'nationality','state','permanent_address',
     'prev_college','prev_combination',
     'admission_through'
+    $required[] = 'aadhaar_number';
   ];
 
   foreach ($required as $f) {
