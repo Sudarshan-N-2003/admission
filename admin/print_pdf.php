@@ -1,10 +1,8 @@
 <?php
-// NO spaces, NO echo, NO HTML before this
+// NO spaces, NO echo, NO HTML before this file
+
 require_once __DIR__ . '/../db.php';
 require_once __DIR__ . '/../vendor/autoload.php';
-
-
-use TCPDF;
 
 // ---------------------------
 // GET APPLICATION ID
@@ -18,20 +16,27 @@ if (!$id) {
 // FETCH DATA
 // ---------------------------
 $pdo = get_db();
+
 $stmt = $pdo->prepare("
     SELECT *
     FROM admissions
     WHERE application_id = :id
 ");
 $stmt->execute([':id' => $id]);
-$d = $stmt->fetch();
+$d = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$d) {
     die('Application not found');
 }
 
 // ---------------------------
-// PDF INIT
+// FIX ACADEMIC YEAR (NO DB COLUMN)
+// ---------------------------
+$year = date('Y', strtotime($d['created_at']));
+$academic_year = $year . ' - ' . ($year + 1);
+
+// ---------------------------
+// INIT TCPDF
 // ---------------------------
 $pdf = new TCPDF('P', 'mm', 'A4', true, 'UTF-8', false);
 $pdf->SetCreator('VVIT');
@@ -60,7 +65,14 @@ $pdf->Ln(3);
 
 // Application + Date
 $pdf->Cell(95, 6, 'APPLICATION NO: ' . $d['application_id'], 0, 0);
-$pdf->Cell(95, 6, 'DATE & TIME: ' . date('Y-m-d H:i:s', strtotime($d['created_at'])), 0, 1, 'R');
+$pdf->Cell(
+    95,
+    6,
+    'DATE & TIME: ' . date('d-m-Y H:i:s', strtotime($d['created_at'])),
+    0,
+    1,
+    'R'
+);
 
 // ---------------------------
 // PHOTO BOX
@@ -74,7 +86,7 @@ if (!empty($d['photo_path']) && file_exists($d['photo_path'])) {
 }
 
 // ---------------------------
-// PERSONAL INFO TABLE
+// PERSONAL INFORMATION
 // ---------------------------
 $pdf->Ln(5);
 $pdf->SetFont('helvetica', 'B', 9);
@@ -129,7 +141,6 @@ $pdf->MultiCell(
 
 $pdf->Ln(2);
 
-// Document table
 $pdf->SetFont('helvetica', 'B', 9);
 $pdf->Cell(10, 7, 'Sl', 1);
 $pdf->Cell(120, 7, 'Document', 1);
@@ -165,15 +176,15 @@ $pdf->AddPage();
 $pdf->SetFont('helvetica', 'B', 12);
 $pdf->Cell(0, 7, 'VIJAYA VITTALA INSTITUTE OF TECHNOLOGY', 0, 1, 'C');
 
-$pdf->SetFont('helvetica', 'B', 10);
 $pdf->Ln(4);
+$pdf->SetFont('helvetica', 'B', 10);
 $pdf->Cell(0, 7, 'ACKNOWLEDGMENT – COLLEGE COPY', 0, 1, 'C');
 
 $pdf->SetFont('helvetica', '', 9);
 $pdf->MultiCell(
     0,
     6,
-    "This is to certify that the following documents have been received from {$d['student_name']} for admission to BE in the Branch {$d['allotted_branch']} for the academic year {$d['academic_year']}.",
+    "This is to certify that the following documents have been received from {$d['student_name']} for admission to BE in the Branch {$d['allotted_branch']} for the academic year {$academic_year}.",
     0
 );
 
