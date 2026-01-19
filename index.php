@@ -108,6 +108,17 @@
 <input type="text" name="mobile" pattern="[0-9]{10}" required>
 <small id="dupMessage" class="muted"></small>
 
+<label>Aadhaar Number</label>
+<input
+  type="text"
+  name="aadhaar_number"
+  maxlength="12"
+  pattern="[0-9]{12}"
+  placeholder="12 digit Aadhaar number"
+  required
+>
+
+  
 <label>Guardian Mobile</label>
 <input type="text" name="guardian_mobile" pattern="[0-9]{10}" required>
 
