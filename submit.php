@@ -1,6 +1,14 @@
 <?php
 session_start();
 
+ini_set('upload_max_filesize', '20M');
+ini_set('post_max_size', '25M');
+ini_set('memory_limit', '256M');
+ini_set('max_execution_time', '300');
+
+
+
+
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/functions.php';
 
@@ -8,25 +16,35 @@ try {
 
   $pdo = get_db();
 
-  /* -------------------------------
-     REQUIRED FIELDS
-  -------------------------------- */
-  $required = [
-    'student_name','dob','gender','religion',
-    'category','sub_caste',
-    'father_name','mother_name',
-    'email','mobile','guardian_mobile',
-    'nationality','state','permanent_address',
-    'prev_college','prev_combination',
+/* ==================================================
+   REQUIRED FIELD VALIDATION
+================================================== */
+$required = [
+    'student_name',
+    'dob',
+    'gender',
+    'religion',
+    'category',
+    'sub_caste',
+    'father_name',
+    'mother_name',
+    'email',
+    'mobile',
+    'aadhaar_number',
+    'guardian_mobile',
+    'prev_college',
+    'prev_combination',
+    'nationality',
+    'state',
+    'permanent_address',
     'admission_through'
-    $required[] = 'aadhaar_number';
-  ];
+];
 
-  foreach ($required as $f) {
-    if (empty($_POST[$f] ?? '')) {
-      throw new Exception("Missing required field: $f");
+foreach ($required as $field) {
+    if (!isset($_POST[$field]) || trim($_POST[$field]) === '') {
+        throw new Exception("Missing required field: " . str_replace('_', ' ', $field));
     }
-  }
+}
 
   /* -------------------------------
      NORMALIZE INPUT
