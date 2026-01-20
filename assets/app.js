@@ -175,3 +175,33 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("nationality")
     ?.addEventListener("change", updateStateOptions);
 });
+
+
+
+
+
+
+/* ===============================
+   SHOW UPLOADING ANIMATION
+================================ */
+document.addEventListener("DOMContentLoaded", () => {
+  const form = document.querySelector("form");
+  const overlay = document.getElementById("uploadOverlay");
+  const submitBtn = document.getElementById("submitBtn");
+
+  if (!form || !overlay) return;
+
+  form.addEventListener("submit", () => {
+    // Disable submit button
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Uploading...";
+    }
+
+    // Show overlay
+    overlay.classList.remove("hidden");
+
+    // Blur form
+    document.querySelector(".container")?.classList.add("form-blur");
+  });
+});
