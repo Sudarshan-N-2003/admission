@@ -264,5 +264,14 @@
 </div>
 
 <script src="assets/app.js"></script>
+
+
+  <!-- Uploading Overlay -->
+<div id="uploadOverlay" class="upload-overlay hidden">
+  <div class="upload-box">
+    <div class="spinner"></div>
+    <p>Uploading documents…<br>Please wait</p>
+  </div>
+</div>
 </body>
 </html>
