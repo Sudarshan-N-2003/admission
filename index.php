@@ -264,6 +264,55 @@
 </div>
 
 <script src="assets/app.js"></script>
+<script>
+const indianStates = [
+  "KARNATAKA","ANDHRA PRADESH","ARUNACHAL PRADESH","ASSAM","BIHAR",
+  "CHHATTISGARH","GOA","GUJARAT","HARYANA","HIMACHAL PRADESH",
+  "JHARKHAND","KERALA","MADHYA PRADESH","MAHARASHTRA","MANIPUR",
+  "MEGHALAYA","MIZORAM","NAGALAND","ODISHA","PUNJAB","RAJASTHAN",
+  "SIKKIM","TAMIL NADU","TELANGANA","TRIPURA","UTTAR PRADESH",
+  "UTTARAKHAND","WEST BENGAL","DELHI","JAMMU AND KASHMIR","LADAKH",
+  "PUDUCHERRY","CHANDIGARH","LAKSHADWEEP",
+  "ANDAMAN AND NICOBAR ISLANDS",
+  "DADRA AND NAGAR HAVELI AND DAMAN AND DIU"
+];
+
+const nearbyCountries = {
+  NEPAL: ["BAGMATI","LUMBINI","GANDaki","KOSHI"],
+  "SRI LANKA": ["WESTERN","CENTRAL","SOUTHERN","NORTHERN"],
+  BANGLADESH: ["DHAKA","CHITTAGONG","KHULNA","RAJSHAHI"],
+  BHUTAN: ["THIMPHU","PARO","PUNAKHA"],
+  MYANMAR: ["YANGON","MANDALAY","BAGO"]
+};
+
+function loadStatesByNationality() {
+  const nationality = document.getElementById("nationality").value;
+  const stateSelect = document.getElementById("state");
+
+  stateSelect.innerHTML = '<option value="">Select State / Province</option>';
+
+  let list = [];
+
+  if (nationality === "INDIAN") {
+    list = indianStates;
+  } else if (nearbyCountries[nationality]) {
+    list = nearbyCountries[nationality];
+  } else {
+    stateSelect.innerHTML += `<option value="OTHER">OTHER</option>`;
+    return;
+  }
+
+  list.forEach(s => {
+    const opt = document.createElement("option");
+    opt.value = s;
+    opt.textContent = s;
+    stateSelect.appendChild(opt);
+  });
+}
+
+document.getElementById("nationality")
+  .addEventListener("change", loadStatesByNationality);
+</script>
 
 
   <!-- Uploading Overlay -->
