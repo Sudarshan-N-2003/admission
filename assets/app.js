@@ -156,3 +156,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
   showAdmissionFields();
 });
+
+
+
+
+document.querySelectorAll('input[type="file"]').forEach(input => {
+  input.addEventListener('change', () => {
+    if (input.files[0] && input.files[0].size > 5 * 1024 * 1024) {
+      alert("Each file must be below 5MB");
+      input.value = "";
+    }
+  });
+});
+
