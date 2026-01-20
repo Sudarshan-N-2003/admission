@@ -317,6 +317,18 @@ document.getElementById("nationality")
 </script>
 
 
+  <script>
+document.querySelectorAll('input[type="file"]').forEach(input => {
+  input.addEventListener('change', () => {
+    if (input.files[0] && input.files[0].size > 1.5 * 1024 * 1024) {
+      alert("Each file must be below 1.5 MB");
+      input.value = "";
+    }
+  });
+});
+</script>
+
+
   <!-- Uploading Overlay -->
 <div id="uploadOverlay" class="upload-overlay hidden">
   <div class="upload-box">
