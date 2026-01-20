@@ -255,7 +255,9 @@
 
     <div class="actions">
       <button type="button" class="btn-grey" onclick="closePreview()">Edit</button>
-      <button type="submit" class="btn-primary" id="submitBtn">Confirm & Submit</button>
+      <<button type="button" class="btn-primary" onclick="confirmAndSubmit()">
+  Confirm & Submit
+</button>
     </div>
   </div>
 </div>
