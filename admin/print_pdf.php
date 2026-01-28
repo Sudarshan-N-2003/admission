@@ -1,60 +1,75 @@
 <?php
+// ===============================
+// PRINT PDF – FINAL STABLE VERSION
+// ===============================
+
+// NO SPACES / NO HTML BEFORE THIS
+error_reporting(E_ALL & ~E_WARNING & ~E_NOTICE);
 
 require_once __DIR__ . '/../db.php';
 require_once __DIR__ . '/../vendor/autoload.php';
 
-// ---------------------------
-// GET APPLICATION ID
-// ---------------------------
+use TCPDF;
+
+/* ===============================
+   HELPER: LOAD R2 IMAGE TO TEMP
+================================ */
+function r2_to_temp_image(?string $url): ?string {
+    if (!$url) return null;
+
+    $tmp = tempnam(sys_get_temp_dir(), 'r2img_');
+    $img = @file_get_contents($url);
+
+    if ($img === false) return null;
+
+    file_put_contents($tmp, $img);
+    return $tmp;
+}
+
+/* ===============================
+   GET APPLICATION ID
+================================ */
 $id = $_GET['id'] ?? '';
 if (!$id) {
-    exit('Invalid Application ID');
+    die('Invalid Application ID');
 }
 
-// ---------------------------
-// FETCH DATA FROM DB
-// ---------------------------
+/* ===============================
+   FETCH APPLICATION DATA
+================================ */
 $pdo = get_db();
-
-$stmt = $pdo->prepare("
-    SELECT *
-    FROM admissions
-    WHERE application_id = :id
-");
+$stmt = $pdo->prepare("SELECT * FROM admissions WHERE application_id = :id");
 $stmt->execute([':id' => $id]);
-$d = $stmt->fetch(PDO::FETCH_ASSOC);
+$d = $stmt->fetch();
 
 if (!$d) {
-    exit('Application not found');
+    die('Application not found');
 }
 
-// ---------------------------
-// FIX ACADEMIC YEAR (SAFE)
-// ---------------------------
-$year = date('Y', strtotime($d['created_at']));
+/* ===============================
+   FIX ACADEMIC YEAR
+================================ */
+$created = $d['created_at'] ?? date('Y-m-d');
+$year = (int)date('Y', strtotime($created));
 $academic_year = $year . ' - ' . ($year + 1);
 
-// ---------------------------
-// TCPDF INIT
-// ---------------------------
+/* ===============================
+   INIT TCPDF
+================================ */
 $pdf = new TCPDF('P', 'mm', 'A4', true, 'UTF-8', false);
 $pdf->SetCreator('VVIT');
 $pdf->SetAuthor('VVIT');
 $pdf->SetTitle('Admission Application');
 $pdf->SetMargins(10, 10, 10);
-$pdf->SetAutoPageBreak(true, 15);
-$pdf->SetPrintHeader(false);
-$pdf->SetPrintFooter(false);
-
-// ==========================================================
-// PAGE 1 – STUDENT COPY
-// ==========================================================
-$pdf->AddPage();
+$pdf->SetAutoPageBreak(true, 12);
 $pdf->SetFont('helvetica', '', 9);
 
-// ---------------------------
-// HEADER
-// ---------------------------
+/* ===============================
+   PAGE 1 – STUDENT COPY
+================================ */
+$pdf->AddPage();
+
+/* Header */
 $pdf->SetFont('helvetica', 'B', 12);
 $pdf->Cell(0, 6, 'VIJAYA VITTALA INSTITUTE OF TECHNOLOGY', 0, 1, 'C');
 
@@ -62,47 +77,40 @@ $pdf->SetFont('helvetica', '', 9);
 $pdf->MultiCell(
     0,
     5,
-    "35/1, Dodda Gubbi Post, Hennur-Bagalur Road,\nThanisandra, Bengaluru, Karnataka - 560077",
+    "35/1, Dodda Gubbi Post, Hennur–Bagalur Road,\nThanisandra, Bengaluru, Karnataka – 560077",
     0,
     'C'
 );
 $pdf->Ln(3);
 
+/* Application No + Date */
 $pdf->Cell(95, 6, 'APPLICATION NO: ' . $d['application_id'], 0, 0);
-$pdf->Cell(95, 6, 'DATE & TIME: ' . date('Y-m-d H:i:s', strtotime($d['created_at'])), 0, 1, 'R');
+$pdf->Cell(95, 6, 'DATE & TIME: ' . date('d-m-Y H:i', strtotime($d['created_at'])), 0, 1, 'R');
 
-// ---------------------------
-// PHOTO (CLOUDFLARE SAFE)
-// ---------------------------
+/* Photo */
 $x = 170;
 $y = 35;
 $pdf->Rect($x, $y, 25, 30);
 
 if (!empty($d['photo_path'])) {
-    $tmpPhoto = sys_get_temp_dir() . '/photo_' . uniqid() . '.jpg';
-    $imgData = @file_get_contents($d['photo_path']);
-
-    if ($imgData !== false) {
-        file_put_contents($tmpPhoto, $imgData);
-        if (file_exists($tmpPhoto)) {
-            $pdf->Image($tmpPhoto, $x, $y, 25, 30);
-        }
+    $tmpImg = r2_to_temp_image($d['photo_path']);
+    if ($tmpImg) {
+        $pdf->Image($tmpImg, $x, $y, 25, 30);
+        unlink($tmpImg);
     }
 }
 
-// ---------------------------
-// PERSONAL INFORMATION
-// ---------------------------
+/* Section Title */
 $pdf->Ln(5);
 $pdf->SetFont('helvetica', 'B', 9);
 $pdf->Cell(0, 7, 'PERSONAL INFORMATION', 1, 1);
-
 $pdf->SetFont('helvetica', '', 9);
 
-function row($pdf, $l1, $v1, $l2 = '', $v2 = '') {
+/* Helper for rows */
+function info_row($pdf, $l1, $v1, $l2 = '', $v2 = '') {
     $pdf->Cell(40, 7, $l1, 1);
     $pdf->Cell(55, 7, $v1, 1);
-    if ($l2 !== '') {
+    if ($l2) {
         $pdf->Cell(40, 7, $l2, 1);
         $pdf->Cell(55, 7, $v2, 1);
     } else {
@@ -111,38 +119,40 @@ function row($pdf, $l1, $v1, $l2 = '', $v2 = '') {
     $pdf->Ln();
 }
 
-row($pdf, 'STUDENT NAME', $d['student_name']);
-row($pdf, 'GENDER', $d['gender']);
-row($pdf, 'RELIGION', $d['religion'], 'CATEGORY', $d['category']);
-row($pdf, 'SUB CASTE', $d['sub_caste']);
-row($pdf, 'DOB', $d['dob'], 'STATE', $d['state']);
-row($pdf, 'FATHER / GUARDIAN', $d['father_name']);
-row($pdf, 'MOTHER NAME', $d['mother_name']);
-row($pdf, 'EMAIL', $d['email'], 'MOBILE', $d['mobile']);
-row($pdf, 'GUARDIAN MOBILE', $d['guardian_mobile']);
-row($pdf, 'PERMANENT ADDRESS', $d['permanent_address']);
-row($pdf, 'ADMISSION THROUGH', $d['admission_through'], 'ALLOTTED BRANCH', $d['allotted_branch']);
-row($pdf, 'PREVIOUS COMBINATION', $d['prev_combination']);
+/* Data Rows */
+info_row($pdf, 'STUDENT NAME', $d['student_name']);
+info_row($pdf, 'GENDER', $d['gender'], 'RELIGION', $d['religion']);
+info_row($pdf, 'CATEGORY', $d['category'], 'SUB CASTE', $d['sub_caste']);
+info_row($pdf, 'DOB', $d['dob'], 'STATE', $d['state']);
+info_row($pdf, 'FATHER / GUARDIAN', $d['father_name']);
+info_row($pdf, 'MOTHER NAME', $d['mother_name']);
+info_row($pdf, 'EMAIL', $d['email'], 'MOBILE', $d['mobile']);
+info_row($pdf, 'GUARDIAN MOBILE', $d['guardian_mobile']);
+info_row($pdf, 'PERMANENT ADDRESS', $d['permanent_address']);
+info_row(
+    $pdf,
+    'ADMISSION THROUGH',
+    $d['admission_through'],
+    'ALLOTTED BRANCH',
+    $d['allotted_branch']
+);
+info_row($pdf, 'PREVIOUS COMBINATION', $d['prev_combination']);
 
-// ---------------------------
-// ACKNOWLEDGMENT – STUDENT COPY
-// ---------------------------
+/* Acknowledgment – Student Copy */
 $pdf->Ln(6);
-$pdf->SetFont('helvetica', 'B', 12);
-$pdf->Cell(0, 6, 'VIJAYA VITTALA INSTITUTE OF TECHNOLOGY', 0, 1, 'C');
 $pdf->SetFont('helvetica', 'B', 10);
-$pdf->Cell(0, 7, 'ACKNOWLEDGMENT - STUDENT COPY', 0, 1, 'C');
+$pdf->Cell(0, 7, 'ACKNOWLEDGMENT – STUDENT COPY', 0, 1, 'C');
 
 $pdf->SetFont('helvetica', '', 9);
 $pdf->MultiCell(
     0,
     6,
-    "This is to certify that the following documents have been received from {$d['student_name']} for admission to BE in the Branch {$d['allotted_branch']} from the academic year {$academic_year}.",
+    "This is to certify that the following documents have been received from {$d['student_name']} for admission to BE in the Branch {$d['allotted_branch']} for the academic year {$academic_year}.",
     0
 );
 
+/* Documents Table */
 $pdf->Ln(2);
-
 $pdf->SetFont('helvetica', 'B', 9);
 $pdf->Cell(10, 7, 'Sl', 1);
 $pdf->Cell(120, 7, 'Document', 1);
@@ -158,21 +168,11 @@ $docs = [
     'Photograph'
 ];
 
-// Assuming DB has columns like 'received_10th', 'received_12th', etc., as booleans or truthy values for dynamic status.
-// If not present, defaults to 'RECEIVED'. Add/alter columns in DB as needed for auto-update.
-$statuses = [
-    '10th Marks Card' => isset($d['received_10th']) && $d['received_10th'] ? 'RECEIVED' : 'NOT RECEIVED',
-    '12th / Diploma Marks Card' => isset($d['received_12th']) && $d['received_12th'] ? 'RECEIVED' : 'NOT RECEIVED',
-    'Study Certificate' => isset($d['received_study']) && $d['received_study'] ? 'RECEIVED' : 'NOT RECEIVED',
-    'Transfer Certificate' => isset($d['received_transfer']) && $d['received_transfer'] ? 'RECEIVED' : 'NOT RECEIVED',
-    'Photograph' => !empty($d['photo_path']) ? 'RECEIVED' : 'NOT RECEIVED'  // Photo uses existing field for example
-];
-
 $i = 1;
 foreach ($docs as $doc) {
     $pdf->Cell(10, 7, $i++, 1);
     $pdf->Cell(120, 7, $doc, 1);
-    $pdf->Cell(50, 7, $statuses[$doc], 1);
+    $pdf->Cell(50, 7, 'RECEIVED', 1);
     $pdf->Ln();
 }
 
@@ -180,9 +180,9 @@ $pdf->Ln(12);
 $pdf->Cell(90, 7, 'Student Signature', 0, 0);
 $pdf->Cell(90, 7, 'Admission Director', 0, 1, 'R');
 
-// ==========================================================
-// PAGE 2 – COLLEGE COPY
-// ==========================================================
+/* ===============================
+   PAGE 2 – COLLEGE COPY
+================================ */
 $pdf->AddPage();
 
 $pdf->SetFont('helvetica', 'B', 12);
@@ -190,18 +190,17 @@ $pdf->Cell(0, 7, 'VIJAYA VITTALA INSTITUTE OF TECHNOLOGY', 0, 1, 'C');
 
 $pdf->Ln(4);
 $pdf->SetFont('helvetica', 'B', 10);
-$pdf->Cell(0, 7, 'ACKNOWLEDGMENT - COLLEGE COPY', 0, 1, 'C');
+$pdf->Cell(0, 7, 'ACKNOWLEDGMENT – COLLEGE COPY', 0, 1, 'C');
 
 $pdf->SetFont('helvetica', '', 9);
 $pdf->MultiCell(
     0,
     6,
-    "This is to certify that the following documents have been received from {$d['student_name']} for admission to BE in the Branch {$d['allotted_branch']} from the academic year {$academic_year}.",
+    "This is to certify that the following documents have been received from {$d['student_name']} for admission to BE in the Branch {$d['allotted_branch']} for the academic year {$academic_year}.",
     0
 );
 
 $pdf->Ln(2);
-
 $pdf->SetFont('helvetica', 'B', 9);
 $pdf->Cell(10, 7, 'Sl', 1);
 $pdf->Cell(120, 7, 'Document', 1);
@@ -213,7 +212,7 @@ $i = 1;
 foreach ($docs as $doc) {
     $pdf->Cell(10, 7, $i++, 1);
     $pdf->Cell(120, 7, $doc, 1);
-    $pdf->Cell(50, 7, $statuses[$doc], 1);
+    $pdf->Cell(50, 7, 'RECEIVED', 1);
     $pdf->Ln();
 }
 
@@ -221,8 +220,8 @@ $pdf->Ln(12);
 $pdf->Cell(90, 7, 'Student Signature', 0, 0);
 $pdf->Cell(90, 7, 'Admission Director', 0, 1, 'R');
 
-// ---------------------------
-// OUTPUT PDF
-// ---------------------------
+/* ===============================
+   OUTPUT
+================================ */
 $pdf->Output('VVIT_' . $id . '.pdf', 'I');
 exit;
