@@ -5,34 +5,37 @@ use Dompdf\Dompdf;
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
+/* =========================================================
+   TIME + APPLICATION ID HELPERS
+========================================================= */
+
 /**
- * Fetch current year from external source (not server clock)
+ * Fetch current year from external time API (Asia/Kolkata)
  */
 function fetch_external_year(): int {
     $url = 'https://worldtimeapi.org/api/timezone/Asia/Kolkata';
-    $context = stream_context_create([
-        'http' => [
-            'timeout' => 5
-        ]
+
+    $ctx = stream_context_create([
+        'http' => ['timeout' => 5]
     ]);
 
-    $response = @file_get_contents($url, false, $context);
-    if ($response !== false) {
-        $data = json_decode($response, true);
-        if (isset($data['datetime'])) {
-            return (int) substr($data['datetime'], 0, 4);
+    $res = @file_get_contents($url, false, $ctx);
+    if ($res) {
+        $json = json_decode($res, true);
+        if (!empty($json['datetime'])) {
+            return (int) substr($json['datetime'], 0, 4);
         }
     }
 
-    // Fallback (rare case)
     return (int) date('Y');
 }
 
 /**
- * Generate next serial number per year
+ * Generate next serial number per year (safe, file-based)
+ * Example: 001, 002, 003
  */
 function next_serial_for_year(int $year): string {
-    $dir = sys_get_temp_dir() . '/admission_data';
+    $dir = sys_get_temp_dir() . '/admission_serials';
 
     if (!is_dir($dir)) {
         mkdir($dir, 0777, true);
@@ -46,60 +49,44 @@ function next_serial_for_year(int $year): string {
     return str_pad((string)$next, 3, '0', STR_PAD_LEFT);
 }
 
+/* =========================================================
+   CLOUDFLARE R2 UPLOAD (IMPORTANT)
+========================================================= */
+
 /**
- * Validate and move uploaded file (RENDER SAFE)
+ * Upload file to Cloudflare R2 and return PUBLIC URL
+ * ⚠️ NEVER return local path
  */
-function validate_and_move(
-    array $file,
-    string $destDir,
-    array $allowedExt,
-    int $maxBytes
-): string {
+function upload_to_r2(array $file, string $folder, string $filename): string {
 
-    // Check upload array validity
-    if (!isset($file['error']) || is_array($file['error'])) {
-        throw new Exception('Invalid file upload data');
-    }
-
-    // Handle PHP upload errors explicitly
     if ($file['error'] !== UPLOAD_ERR_OK) {
-        throw new Exception(
-            'Upload failed (PHP error code ' . $file['error'] . ') for ' . $file['name']
-        );
+        throw new Exception('Upload failed: ' . $file['name']);
     }
 
-    // File size check
-    if ($file['size'] > $maxBytes) {
-        throw new Exception('File too large (max ' . ($maxBytes / 1024 / 1024) . 'MB): ' . $file['name']);
+    if ($file['size'] > 10 * 1024 * 1024) {
+        throw new Exception('File exceeds 10MB limit: ' . $file['name']);
     }
 
-    // Extension validation
-    $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-    if (!in_array($ext, $allowedExt, true)) {
-        throw new Exception('Invalid file type: ' . $file['name']);
-    }
+    $key = trim($folder, '/') . '/' . $filename;
 
-    // Ensure destination directory exists
-    if (!is_dir($destDir)) {
-        if (!mkdir($destDir, 0755, true)) {
-            throw new Exception('Server could not create upload directory');
-        }
-    }
+    $s3 = get_r2_client(); // you already have this
+    $s3->putObject([
+        'Bucket'      => getenv('R2_BUCKET'),
+        'Key'         => $key,
+        'Body'        => fopen($file['tmp_name'], 'rb'),
+        'ContentType' => $file['type']
+    ]);
 
-    // Sanitize filename
-    $safeName = preg_replace('/[^A-Za-z0-9._-]/', '_', $file['name']);
-    $targetPath = rtrim($destDir, '/') . '/' . uniqid('upload_', true) . '_' . $safeName;
-
-    // Move uploaded file
-    if (!move_uploaded_file($file['tmp_name'], $targetPath)) {
-        throw new Exception('Server failed to save file: ' . $file['name']);
-    }
-
-    return $targetPath;
+    // ✅ THIS is what must be saved in DB
+    return rtrim(getenv('R2_PUBLIC_URL'), '/') . '/' . $key;
 }
 
+/* =========================================================
+   PDF GENERATION (DOMPDF – HTML ONLY)
+========================================================= */
+
 /**
- * Create PDF from HTML using Dompdf
+ * Create PDF from HTML and save to path
  */
 function create_pdf_from_html(string $html, string $outputPath): void {
     $dompdf = new Dompdf();
@@ -111,192 +98,148 @@ function create_pdf_from_html(string $html, string $outputPath): void {
 }
 
 /**
- * Build Application PDF HTML
+ * Build application PDF HTML
+ * ⚠️ Uses IMAGE URLs (R2), not local paths
  */
-function build_application_html(array $record): string {
-    $d = $record['data'] ?? [];
-    $id = $record['id'] ?? '';
+function build_application_pdf_html(array $d): string {
 
     $photoHtml = '';
-    if (
-        !empty($record['files']['photo']) &&
-        file_exists($record['files']['photo'])
-    ) {
-        $imgData = base64_encode(file_get_contents($record['files']['photo']));
-        $photoHtml = "<img src='data:image/jpeg;base64,$imgData'
-                          style='width:110px;height:130px;border:1px solid #000'>";
+    if (!empty($d['photo_url'])) {
+        $photoHtml = "
+        <div style='position:absolute;right:30px;top:110px;
+                    width:110px;height:130px;border:1px solid #000'>
+            <img src='{$d['photo_url']}' style='width:110px;height:130px'>
+        </div>";
     }
 
-    return "
+    $year = date('Y', strtotime($d['created_at']));
+    $academicYear = $year . ' - ' . ($year + 1);
+
+    return <<<HTML
 <!doctype html>
 <html>
 <head>
-<meta charset='utf-8'>
+<meta charset="utf-8">
 <style>
-body{font-family:Arial, sans-serif;font-size:13px}
-h3{margin-bottom:6px}
+body{font-family:Arial;font-size:12px}
+table{border-collapse:collapse;width:100%}
+td,th{border:1px solid #000;padding:5px}
+.title{text-align:center;font-weight:bold;font-size:14px}
+.small{text-align:center;font-size:11px}
+.section{margin-top:10px;font-weight:bold}
 </style>
 </head>
 <body>
 
-<table width='100%'>
+<div class="title">VIJAYA VITTALA INSTITUTE OF TECHNOLOGY</div>
+<div class="small">
+35/1, Dodda Gubbi Post, Hennur–Bagalur Road,<br>
+Thanisandra, Bengaluru – 560077
+</div>
+
+<br>
+
+<table>
 <tr>
-<td>$photoHtml</td>
-<td align='right'><strong>ID: $id</strong></td>
+<td><b>APPLICATION NO</b></td><td>{$d['application_id']}</td>
+<td><b>DATE & TIME</b></td><td>{$d['created_at']}</td>
 </tr>
 </table>
 
-<h3>{$d['student_name']}</h3>
-<p><b>DOB:</b> {$d['dob']}</p>
-<p><b>Mobile:</b> {$d['mobile']}</p>
-<p><b>Father:</b> {$d['father_name']}</p>
-<p><b>Mother:</b> {$d['mother_name']}</p>
-<p><b>Address:</b> {$d['permanent_address']}</p>
+$photoHtml
 
-<hr>
-<h3 style='text-align:center;font-family:Times New Roman'>
-Vijay Vittal Institute of Technology
-</h3>
+<div class="section">PERSONAL INFORMATION</div>
+<table>
+<tr><td>STUDENT NAME</td><td>{$d['student_name']}</td></tr>
+<tr><td>GENDER</td><td>{$d['gender']}</td></tr>
+<tr><td>RELIGION</td><td>{$d['religion']}</td></tr>
+<tr><td>CATEGORY</td><td>{$d['category']}</td></tr>
+<tr><td>SUB CASTE</td><td>{$d['sub_caste']}</td></tr>
+<tr><td>DOB</td><td>{$d['dob']}</td></tr>
+<tr><td>STATE</td><td>{$d['state']}</td></tr>
+<tr><td>FATHER / GUARDIAN</td><td>{$d['father_name']}</td></tr>
+<tr><td>MOTHER NAME</td><td>{$d['mother_name']}</td></tr>
+<tr><td>EMAIL</td><td>{$d['email']}</td></tr>
+<tr><td>MOBILE</td><td>{$d['mobile']}</td></tr>
+<tr><td>GUARDIAN MOBILE</td><td>{$d['guardian_mobile']}</td></tr>
+<tr><td>PERMANENT ADDRESS</td><td>{$d['permanent_address']}</td></tr>
+<tr><td>ADMISSION THROUGH</td><td>{$d['admission_through']}</td></tr>
+<tr><td>ALLOTTED BRANCH</td><td>{$d['allotted_branch']}</td></tr>
+<tr><td>PREVIOUS COMBINATION</td><td>{$d['prev_combination']}</td></tr>
+</table>
+
+<br>
+
+<b>ACKNOWLEDGMENT – STUDENT COPY</b><br>
+This is to certify that the following documents have been received from
+<b>{$d['student_name']}</b> for admission to BE in
+<b>{$d['allotted_branch']}</b> for the academic year
+<b>$academicYear</b>.
+
+<table>
+<tr><th>Sl</th><th>Document</th><th>Status</th></tr>
+<tr><td>1</td><td>10th Marks Card</td><td>RECEIVED</td></tr>
+<tr><td>2</td><td>12th / Diploma Marks Card</td><td>RECEIVED</td></tr>
+<tr><td>3</td><td>Study Certificate</td><td>RECEIVED</td></tr>
+<tr><td>4</td><td>Transfer Certificate</td><td>RECEIVED</td></tr>
+<tr><td>5</td><td>Photograph</td><td>RECEIVED</td></tr>
+</table>
+
+<br><br>
+<table style="border:none">
+<tr>
+<td style="border:none">Student Signature</td>
+<td style="border:none;text-align:right">Admission Director</td>
+</tr>
+</table>
 
 </body>
-</html>";
+</html>
+HTML;
 }
 
-/**
- * Send email with PDF attachment
- */
+/* =========================================================
+   EMAIL SENDING
+========================================================= */
+
 function send_email_with_attachment(
     string $to,
     string $name,
-    string $id,
-    string $pdfPath,
-    string $mobile
+    string $applicationId,
+    string $pdfPath
 ): bool {
 
-    if (!filter_var($to, FILTER_VALIDATE_EMAIL)) {
-        return false;
-    }
-
-    if (!file_exists($pdfPath)) {
-        return false;
-    }
-
-    $mail = new PHPMailer(true);
+    if (!filter_var($to, FILTER_VALIDATE_EMAIL)) return false;
+    if (!file_exists($pdfPath)) return false;
 
     try {
+        $mail = new PHPMailer(true);
         $mail->isSMTP();
-        $mail->Host = getenv('SMTP_HOST');
-        $mail->SMTPAuth = true;
-        $mail->Username = getenv('SMTP_USER');
-        $mail->Password = getenv('SMTP_PASS');
+        $mail->Host       = getenv('SMTP_HOST');
+        $mail->SMTPAuth   = true;
+        $mail->Username   = getenv('SMTP_USER');
+        $mail->Password   = getenv('SMTP_PASS');
         $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-        $mail->Port = getenv('SMTP_PORT') ?: 587;
+        $mail->Port       = getenv('SMTP_PORT') ?: 587;
 
         $mail->setFrom(getenv('FROM_EMAIL'), getenv('FROM_NAME'));
-        $mail->addAddress($to);
-        $mail->addAttachment($pdfPath, $id . '.pdf');
+        $mail->addAddress($to, $name);
+        $mail->addAttachment($pdfPath, $applicationId . '.pdf');
 
         $mail->isHTML(true);
-        $mail->Subject = "VVIT Admission Application - $id";
+        $mail->Subject = "VVIT Admission Application – $applicationId";
         $mail->Body = "
-            <p>Dear $name,</p>
-            <p>Your Application ID: <strong>$id</strong></p>
-            <p>Please find the attached application PDF.</p>
+            <p>Dear <b>$name</b>,</p>
+            <p>Your admission application has been submitted successfully.</p>
+            <p><b>Application ID:</b> $applicationId</p>
+            <p>Please find the attached PDF.</p>
         ";
 
         $mail->send();
         return true;
 
     } catch (Exception $e) {
-        error_log('Mail error: ' . $mail->ErrorInfo);
+        error_log('Mail Error: ' . $e->getMessage());
         return false;
     }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-function build_application_pdf_html(array $record): string {
-
-    $d = $record['data'];
-    $f = $record['files'];
-
-    $photo = '';
-    if (!empty($f['student_signature']) && file_exists($f['student_signature'])) {
-        $img = base64_encode(file_get_contents($f['student_signature']));
-        $photo = "<img src='data:image/png;base64,$img' style='width:120px;height:60px;border:1px solid #000'>";
-    }
-
-    $admissionDetails = '';
-    if ($d['admission_through'] === 'KEA') {
-        $admissionDetails = "
-            <p><b>Admission Through:</b> KEA</p>
-            <p><b>CET Number:</b> {$d['cet_number']}</p>
-            <p><b>CET Rank:</b> {$d['cet_rank']}</p>
-            <p><b>Quota:</b> {$d['seat_allotted']}</p>
-            <p><b>Allotted Branch:</b> {$d['allotted_branch']}</p>
-        ";
-    } else {
-        $admissionDetails = "
-            <p><b>Admission Through:</b> MANAGEMENT</p>
-            <p><b>Allotted Branch:</b> {$d['allotted_branch']}</p>
-        ";
-    }
-
-    return "
-<!DOCTYPE html>
-<html>
-<head>
-<style>
-body{font-family:Arial;font-size:12px}
-h2{text-align:center}
-.section{margin-bottom:10px}
-.box{border:1px solid #000;padding:8px}
-</style>
-</head>
-<body>
-
-<h2>Vijay Vittal Institute of Technology</h2>
-<p style='text-align:center'>Admission Application</p>
-
-<div class='box section'>
-  <p><b>Application ID:</b> {$record['application_id']}</p>
-  <p><b>Student Name:</b> {$d['student_name']}</p>
-  <p><b>DOB:</b> {$d['dob']}</p>
-  <p><b>Mobile:</b> {$d['mobile']}</p>
-  <p><b>Guardian Mobile:</b> {$d['guardian_mobile']}</p>
-  <p><b>State:</b> {$d['state']}</p>
-  <p><b>Category:</b> {$d['category']}</p>
-  <p><b>Sub Caste:</b> {$d['sub_caste']}</p>
-</div>
-
-<div class='box section'>
-  <h4>Admission Details</h4>
-  $admissionDetails
-</div>
-
-<div class='box section'>
-  <h4>Educational Details</h4>
-  <p><b>Previous Combination:</b> {$d['prev_combination']}</p>
-  <p><b>Previous College:</b> {$d['prev_college']}</p>
-  <p><b>Address:</b> {$d['permanent_address']}</p>
-</div>
-
-<div class='box section'>
-  <h4>Student Signature</h4>
-  $photo
-</div>
-
-</body>
-</html>
-";
 }
