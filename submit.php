@@ -1,189 +1,246 @@
 <?php
+declare(strict_types=1);
 session_start();
 
-ini_set('upload_max_filesize', '20M');
-ini_set('post_max_size', '25M');
-ini_set('memory_limit', '256M');
-ini_set('max_execution_time', '300');
-
-
-
-
+/* =========================================
+   BOOTSTRAP
+========================================= */
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/functions.php';
+require_once __DIR__ . '/vendor/autoload.php';
+
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
+/* =========================================
+   BASIC CONFIG
+========================================= */
+ini_set('post_max_size', '10M');
+ini_set('upload_max_filesize', '10M');
+
+$MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+
+/* =========================================
+   HELPER: FAIL SAFELY
+========================================= */
+function fail(string $msg): never {
+    $_SESSION['flash'] = "Error: $msg";
+    $_SESSION['flash_type'] = 'error';
+    header("Location: index.php");
+    exit;
+}
 
 try {
 
-  $pdo = get_db();
+    /* =========================================
+       1. REQUIRED FIELD VALIDATION
+    ========================================= */
+    $required = [
+        'student_name','dob','gender','religion',
+        'category','sub_caste',
+        'father_name','mother_name',
+        'email','mobile','guardian_mobile',
+        'aadhaar_number',
+        'prev_college','prev_combination',
+        'nationality','state','permanent_address',
+        'admission_through'
+    ];
 
-/* ==================================================
-   REQUIRED FIELD VALIDATION
-================================================== */
-$required = [
-    'student_name',
-    'dob',
-    'gender',
-    'religion',
-    'category',
-    'sub_caste',
-    'father_name',
-    'mother_name',
-    'email',
-    'mobile',
-    'aadhaar_number',
-    'guardian_mobile',
-    'prev_college',
-    'prev_combination',
-    'nationality',
-    'state',
-    'permanent_address',
-    'admission_through'
-];
-
-foreach ($required as $field) {
-    if (!isset($_POST[$field]) || trim($_POST[$field]) === '') {
-        throw new Exception("Missing required field: " . str_replace('_', ' ', $field));
+    foreach ($required as $field) {
+        if (empty(trim($_POST[$field] ?? ''))) {
+            fail("Missing required field: $field");
+        }
     }
-}
 
-  /* -------------------------------
-     NORMALIZE INPUT
-  -------------------------------- */
-  $d = [];
-  foreach ($_POST as $k => $v) {
-    $d[$k] = is_string($v) ? strtoupper(trim($v)) : $v;
-  }
-
-  /* -------------------------------
-     ADMISSION TYPE LOGIC
-  -------------------------------- */
-  if ($d['admission_through'] === 'KEA') {
-    foreach (['cet_number','cet_rank','seat_allotted','allotted_branch'] as $f) {
-      if (empty($d[$f])) throw new Exception("Missing KEA field: $f");
+    /* =========================================
+       2. NORMALIZE INPUT
+    ========================================= */
+    $data = [];
+    foreach ($_POST as $k => $v) {
+        $data[$k] = is_string($v) ? strtoupper(trim($v)) : $v;
     }
-  } else {
-    if (empty($d['allotted_branch_management'])) {
-      throw new Exception("Missing Management branch");
+
+    /* =========================================
+       3. ADMISSION TYPE LOGIC
+    ========================================= */
+    if ($data['admission_through'] === 'KEA') {
+        foreach (['cet_number','cet_rank','seat_allotted','allotted_branch'] as $f) {
+            if (empty($data[$f] ?? '')) {
+                fail("Missing KEA field: $f");
+            }
+        }
+    } elseif ($data['admission_through'] === 'MANAGEMENT') {
+        if (empty($data['allotted_branch_management'] ?? '')) {
+            fail("Missing Management branch");
+        }
+        $data['allotted_branch'] = $data['allotted_branch_management'];
+        $data['seat_allotted']   = 'MANAGEMENT';
+    } else {
+        fail("Invalid admission type");
     }
-    $d['allotted_branch'] = $d['allotted_branch_management'];
-    $d['seat_allotted'] = 'MANAGEMENT';
-  }
 
-  /* -------------------------------
-     DUPLICATE CHECK
-  -------------------------------- */
-  $chk = $pdo->prepare(
-    "SELECT 1 FROM admissions WHERE mobile = :m OR email = :e"
-  );
-  $chk->execute([
-    ':m' => $d['mobile'],
-    ':e' => $d['email']
-  ]);
-  if ($chk->fetch()) {
-    throw new Exception("Mobile or Email already registered");
-  }
+    /* =========================================
+       4. DUPLICATE CHECK
+    ========================================= */
+    $pdo = get_db();
 
-  /* -------------------------------
-     APPLICATION ID
-  -------------------------------- */
-  $year = fetch_external_year();
-  $serial = next_serial_for_year($year);
-  $appId = '1VJ' . substr($year, -2) . $serial;
+    $chk = $pdo->prepare("
+        SELECT 1 FROM admissions
+        WHERE mobile = :mobile OR email = :email
+        LIMIT 1
+    ");
+    $chk->execute([
+        ':mobile' => $data['mobile'],
+        ':email'  => $data['email']
+    ]);
 
-  /* -------------------------------
-     UPLOAD DIRECTORY
-  -------------------------------- */
-  $base = sys_get_temp_dir() . "/admission/$appId";
-  if (!is_dir($base)) mkdir($base, 0777, true);
+    if ($chk->fetch()) {
+        fail("This mobile number or email is already registered");
+    }
 
-  $max = 2 * 1024 * 1024;
+    /* =========================================
+       5. GENERATE APPLICATION ID
+    ========================================= */
+    $year   = fetch_external_year();     // e.g. 2026
+    $serial = next_serial_for_year($year); // 001
+    $application_id = '1VJ' . substr((string)$year, -2) . $serial;
 
-  $paths = [];
-  $paths['photo'] = validate_and_move($_FILES['passport_photo'],$base,['jpg','jpeg','png'],$max);
-  $paths['signature'] = validate_and_move($_FILES['student_signature'],$base,['jpg','jpeg','png'],$max);
-  $paths['marks_12'] = validate_and_move($_FILES['marks_12'],$base,['pdf'],$max);
-  $paths['study'] = validate_and_move($_FILES['study_certificate'],$base,['pdf'],$max);
-  $paths['tc'] = validate_and_move($_FILES['transfer_certificate'],$base,['pdf'],$max);
+    /* =========================================
+       6. FILE VALIDATION (SIZE ONLY)
+    ========================================= */
+    $requiredFiles = [
+        'passport_photo',
+        'marks_12',
+        'transfer_certificate',
+        'study_certificate',
+        'student_signature'
+    ];
 
-  if ($d['admission_through'] === 'KEA') {
-    $paths['kea'] = validate_and_move($_FILES['kea_acknowledgement'],$base,['pdf'],$max);
-  } else {
-    $paths['mgmt'] = validate_and_move($_FILES['management_receipt'],$base,['pdf'],$max);
-  }
+    foreach ($requiredFiles as $f) {
+        if (empty($_FILES[$f]['name'])) {
+            fail("Missing required file: $f");
+        }
+        if ($_FILES[$f]['size'] > $MAX_FILE_SIZE) {
+            fail("File too large: $f (max 10MB)");
+        }
+    }
 
-  /* -------------------------------
-     INSERT INTO DB (CORE PART)
-  -------------------------------- */
-  $stmt = $pdo->prepare("
-    INSERT INTO admissions (
-      application_id, student_name, dob, gender, religion,
-      category, sub_caste,
-      father_name, mother_name,
-      email, mobile, guardian_mobile,
-      nationality, state, permanent_address,
-      prev_college, prev_combination,
-      admission_through, cet_number, cet_rank,
-      seat_allotted, allotted_branch,
-      photo_path, signature_path,
-      marks_12_path, study_certificate_path,
-      transfer_certificate_path,
-      kea_ack_path, management_receipt_path
-    )
-    VALUES (
-      :application_id, :student_name, :dob, :gender, :religion,
-      :category, :sub_caste,
-      :father_name, :mother_name,
-      :email, :mobile, :guardian_mobile,
-      :nationality, :state, :permanent_address,
-      :prev_college, :prev_combination,
-      :admission_through, :cet_number, :cet_rank,
-      :seat_allotted, :allotted_branch,
-      :photo, :signature,
-      :marks_12, :study, :tc,
-      :kea, :mgmt
-    )
-  ");
+    /* =========================================
+       7. UPLOAD FILES TO CLOUDFLARE R2
+    ========================================= */
+    $folder = "admission/$application_id";
 
-  $stmt->execute([
-    ':application_id' => $appId,
-    ':student_name' => $d['student_name'],
-    ':dob' => $d['dob'],
-    ':gender' => $d['gender'],
-    ':religion' => $d['religion'],
-    ':category' => $d['category'],
-    ':sub_caste' => $d['sub_caste'],
-    ':father_name' => $d['father_name'],
-    ':mother_name' => $d['mother_name'],
-    ':email' => $d['email'],
-    ':mobile' => $d['mobile'],
-    ':guardian_mobile' => $d['guardian_mobile'],
-    ':nationality' => $d['nationality'],
-    ':state' => $d['state'],
-    ':permanent_address' => $d['permanent_address'],
-    ':prev_college' => $d['prev_college'],
-    ':prev_combination' => $d['prev_combination'],
-    ':admission_through' => $d['admission_through'],
-    ':cet_number' => $d['cet_number'] ?? null,
-    ':cet_rank' => $d['cet_rank'] ?? null,
-    ':seat_allotted' => $d['seat_allotted'],
-    ':allotted_branch' => $d['allotted_branch'],
-    ':photo' => $paths['photo'],
-    ':signature' => $paths['signature'],
-    ':marks_12' => $paths['marks_12'],
-    ':study' => $paths['study'],
-    ':tc' => $paths['tc'],
-    ':kea' => $paths['kea'] ?? null,
-    ':mgmt' => $paths['mgmt'] ?? null
-  ]);
+    $photo_url = upload_to_r2($_FILES['passport_photo'], $folder, 'photo.jpg');
+    $signature_url = upload_to_r2($_FILES['student_signature'], $folder, 'signature.png');
 
-  $_SESSION['flash'] = "Application submitted successfully. ID: $appId";
-  $_SESSION['flash_type'] = "success";
-  header("Location: success.php");
-  exit;
+    $marks_12_url = upload_to_r2($_FILES['marks_12'], $folder, 'marks_12.pdf');
+    $transfer_certificate_url = upload_to_r2($_FILES['transfer_certificate'], $folder, 'transfer_certificate.pdf');
+    $study_certificate_url = upload_to_r2($_FILES['study_certificate'], $folder, 'study_certificate.pdf');
 
-} catch (Exception $e) {
-  $_SESSION['flash'] = "Error: " . $e->getMessage();
-  $_SESSION['flash_type'] = "error";
-  header("Location: index.php");
-  exit;
+    $kea_ack_url = null;
+    $management_receipt_url = null;
+
+    if ($data['admission_through'] === 'KEA') {
+        if (empty($_FILES['kea_acknowledgement']['name'])) {
+            fail("KEA acknowledgement is required");
+        }
+        $kea_ack_url = upload_to_r2(
+            $_FILES['kea_acknowledgement'],
+            $folder,
+            'kea_acknowledgement.pdf'
+        );
+    }
+
+    if ($data['admission_through'] === 'MANAGEMENT') {
+        if (empty($_FILES['management_receipt']['name'])) {
+            fail("Management fee receipt is required");
+        }
+        $management_receipt_url = upload_to_r2(
+            $_FILES['management_receipt'],
+            $folder,
+            'management_receipt.pdf'
+        );
+    }
+
+    /* =========================================
+       8. INSERT INTO DATABASE
+    ========================================= */
+    $stmt = $pdo->prepare("
+        INSERT INTO admissions (
+            application_id,
+            student_name, dob, gender, religion,
+            category, sub_caste,
+            father_name, mother_name,
+            email, mobile, guardian_mobile,
+            aadhaar_number,
+            prev_college, prev_combination,
+            nationality, state, permanent_address,
+            admission_through, seat_allotted, allotted_branch,
+            cet_number, cet_rank,
+            photo_url, signature_url,
+            marks_12_url, transfer_certificate_url, study_certificate_url,
+            kea_ack_url, management_receipt_url,
+            created_at
+        ) VALUES (
+            :application_id,
+            :student_name, :dob, :gender, :religion,
+            :category, :sub_caste,
+            :father_name, :mother_name,
+            :email, :mobile, :guardian_mobile,
+            :aadhaar_number,
+            :prev_college, :prev_combination,
+            :nationality, :state, :permanent_address,
+            :admission_through, :seat_allotted, :allotted_branch,
+            :cet_number, :cet_rank,
+            :photo_url, :signature_url,
+            :marks_12_url, :transfer_certificate_url, :study_certificate_url,
+            :kea_ack_url, :management_receipt_url,
+            NOW()
+        )
+    ");
+
+    $stmt->execute([
+        ':application_id' => $application_id,
+        ':student_name' => $data['student_name'],
+        ':dob' => $data['dob'],
+        ':gender' => $data['gender'],
+        ':religion' => $data['religion'],
+        ':category' => $data['category'],
+        ':sub_caste' => $data['sub_caste'],
+        ':father_name' => $data['father_name'],
+        ':mother_name' => $data['mother_name'],
+        ':email' => $data['email'],
+        ':mobile' => $data['mobile'],
+        ':guardian_mobile' => $data['guardian_mobile'],
+        ':aadhaar_number' => $data['aadhaar_number'],
+        ':prev_college' => $data['prev_college'],
+        ':prev_combination' => $data['prev_combination'],
+        ':nationality' => $data['nationality'],
+        ':state' => $data['state'],
+        ':permanent_address' => $data['permanent_address'],
+        ':admission_through' => $data['admission_through'],
+        ':seat_allotted' => $data['seat_allotted'],
+        ':allotted_branch' => $data['allotted_branch'],
+        ':cet_number' => $data['cet_number'] ?? null,
+        ':cet_rank' => $data['cet_rank'] ?? null,
+        ':photo_url' => $photo_url,
+        ':signature_url' => $signature_url,
+        ':marks_12_url' => $marks_12_url,
+        ':transfer_certificate_url' => $transfer_certificate_url,
+        ':study_certificate_url' => $study_certificate_url,
+        ':kea_ack_url' => $kea_ack_url,
+        ':management_receipt_url' => $management_receipt_url
+    ]);
+
+    /* =========================================
+       9. SUCCESS
+    ========================================= */
+    $_SESSION['flash'] = "Application submitted successfully. Your Application ID: $application_id";
+    $_SESSION['flash_type'] = 'success';
+
+    header("Location: success.php?id=$application_id");
+    exit;
+
+} catch (Throwable $e) {
+    fail($e->getMessage());
 }
