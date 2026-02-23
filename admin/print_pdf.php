@@ -158,7 +158,10 @@ if (!empty($d['photo_path'])) {
         unlink($tmpPhoto); // Cleanup temp file
     }
 }
-
+<br>
+    <br>
+    <br>
+    <br>
 // ---------------------------
 // PERSONAL INFORMATION TABLE
 // ---------------------------
