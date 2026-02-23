@@ -190,11 +190,13 @@ row($pdf, 'STUDENT NAME',      $d['student_name']);
 row($pdf, 'GENDER',            $d['gender'],            'RELIGION',        $d['religion']);
 row($pdf, 'CATEGORY',          $d['category'],          'SUB CASTE',       $d['sub_caste']);
 row($pdf, 'DATE OF BIRTH',     $d['dob'],               'STATE',           $d['state']);
+row($pdf, 'AADHAAR NUMBER',    $d['aadhaar_number']);
 row($pdf, 'FATHER / GUARDIAN', $d['father_name']);
 row($pdf, 'MOTHER NAME',       $d['mother_name']);
 row($pdf, 'EMAIL',             $d['email'],             'MOBILE',          $d['mobile']);
 row($pdf, 'GUARDIAN MOBILE',   $d['guardian_mobile']);
 row($pdf, 'ADDRESS',           $d['permanent_address']);
+row($pdf, 'PREV. COLLEGE',     $d['prev_college']);
 row($pdf, 'ADMISSION THROUGH', $d['admission_through'], 'ALLOTTED BRANCH', $d['allotted_branch']);
 row($pdf, 'PREV. COMBINATION', $d['prev_combination']);
 
@@ -205,12 +207,10 @@ $pdf->Ln(5);
 $pdf->SetFont('helvetica', 'B', 10);
 $pdf->Cell(0, 7, 'ACKNOWLEDGMENT – STUDENT COPY', 0, 1, 'C');
 
+$ay = trim(preg_replace('/\s+/', ' ', $academic_year));
 $pdf->SetFont('helvetica', '', 9);
-$pdf->MultiCell(0, 6,
-    "This is to certify that the following documents have been received from {$d['student_name']} " .
-    "for admission to BE in the Branch {$d['allotted_branch']} for the academic year {$academic_year}.",
-    0, 'J'
-);
+$certifyText = "This is to certify that the following documents have been received from " . $d['student_name'] . " for admission to BE in the Branch " . $d['allotted_branch'] . " for the academic year " . $ay . ".";
+$pdf->MultiCell(0, 6, $certifyText, 0, 'L');
 $pdf->Ln(3);
 
 // Header row
@@ -261,11 +261,8 @@ $pdf->SetFont('helvetica', 'B', 10);
 $pdf->Cell(0, 7, 'ACKNOWLEDGMENT – COLLEGE COPY', 0, 1, 'C');
 
 $pdf->SetFont('helvetica', '', 9);
-$pdf->MultiCell(0, 6,
-    "This is to certify that the following documents have been received from {$d['student_name']} " .
-    "for admission to BE in the Branch {$d['allotted_branch']} for the academic year {$academic_year}.",
-    0, 'J'
-);
+$certifyText2 = "This is to certify that the following documents have been received from " . $d['student_name'] . " for admission to BE in the Branch " . $d['allotted_branch'] . " for the academic year " . $ay . ".";
+$pdf->MultiCell(0, 6, $certifyText2, 0, 'L');
 $pdf->Ln(3);
 
 // Header row
